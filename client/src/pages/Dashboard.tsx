@@ -1,11 +1,13 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowDownRight, ArrowUpRight, Battery, DollarSign, MousePointerClick, Users, Zap } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Battery, DollarSign, Loader2, MousePointerClick, Users, Zap } from "lucide-react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { useQuery } from "convex/react";
+import { api } from "convex/_generated/api";
 
-// Mock Data based on KleinesKraftwerk Insights
-const revenueData = [
+// Fallback Mock Data (used when Convex is not available)
+const fallbackRevenueData = [
   { month: "Jan", revenue: 50000, target: 45000 },
   { month: "Feb", revenue: 65000, target: 50000 },
   { month: "Mär", revenue: 85000, target: 70000 },
@@ -20,7 +22,7 @@ const revenueData = [
   { month: "Dez", revenue: 70000, target: 60000 },
 ];
 
-const channelData = [
+const fallbackChannelData = [
   { name: "Referral", value: 4085476, color: "var(--chart-1)" },
   { name: "Paid Search", value: 3502042, color: "var(--chart-2)" },
   { name: "Direct", value: 2775280, color: "var(--chart-3)" },
@@ -28,15 +30,51 @@ const channelData = [
   { name: "Social", value: 86225, color: "var(--chart-5)" },
 ];
 
-const keywordRankingData = [
-  { name: "Balkonkraftwerk", rank: 12, prev: 15 },
-  { name: "Notstromaggregat", rank: 3, prev: 5 },
-  { name: "USV Solar", rank: 1, prev: 1 },
-  { name: "Autarkie", rank: 8, prev: 12 },
-  { name: "Stromspeicher", rank: 15, prev: 18 },
+const fallbackKeywordData = [
+  { keyword: "Balkonkraftwerk", priorityScore: 95, volume: 22000 },
+  { keyword: "Notstromaggregat", priorityScore: 90, volume: 8100 },
+  { keyword: "USV Solar", priorityScore: 88, volume: 1200 },
+  { keyword: "Autarkie", priorityScore: 85, volume: 4400 },
+  { keyword: "Stromspeicher", priorityScore: 82, volume: 18000 },
+];
+
+const fallbackYTDStats = {
+  totalRevenue: 1610000,
+  totalConversions: 2350,
+  avgUsvShare: 32,
+  avgRoas: 4.2,
+};
+
+const fallbackContentItems = [
+  { title: "Strompreisentwicklung 2026", type: "Blog", status: "Published", dueDate: "2026-01-05" },
+  { title: "Förderungen nutzen (Video)", type: "Video", status: "Published", dueDate: "2026-01-12" },
+  { title: "USV für Homeoffice", type: "Pillar Page", status: "Review", dueDate: "2026-01-19" },
+  { title: "Autarkie-Rechner", type: "Tool", status: "In Progress", dueDate: "2026-01-26" },
+  { title: "Solar im Winter", type: "Blog", status: "Planned", dueDate: "2026-02-02" },
 ];
 
 export default function Dashboard() {
+  // Convex Queries
+  const monthlyKPIs = useQuery(api.kpis.getMonthlyKPIs, { year: 2026 });
+  const ytdStats = useQuery(api.kpis.getYTDStats, { year: 2026 });
+  const channelAttribution = useQuery(api.kpis.getChannelAttribution, { year: 2026 });
+  const topKeywords = useQuery(api.keywords.list, { limit: 5 });
+  const contentItems = useQuery(api.content.listItems, {});
+
+  // Use Convex data or fallback to mock data
+  const revenueData = monthlyKPIs ?? fallbackRevenueData;
+  const channelData = channelAttribution ?? fallbackChannelData;
+  const keywordData = topKeywords ?? fallbackKeywordData;
+  const stats = ytdStats ?? fallbackYTDStats;
+  const contentPipeline = contentItems?.slice(0, 5) ?? fallbackContentItems;
+
+  // Format revenue for display
+  const formatRevenue = (value: number) => {
+    if (value >= 1000000) return `€${(value / 1000000).toFixed(1)}M`;
+    if (value >= 1000) return `€${(value / 1000).toFixed(0)}k`;
+    return `€${value}`;
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-8">
@@ -65,7 +103,7 @@ export default function Dashboard() {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">€1.6M</div>
+              <div className="text-2xl font-bold">{formatRevenue(stats.totalRevenue)}</div>
               <p className="text-xs text-muted-foreground flex items-center mt-1">
                 <span className="text-emerald-500 flex items-center mr-1">
                   <ArrowUpRight className="h-3 w-3 mr-0.5" /> +20.1%
@@ -80,7 +118,7 @@ export default function Dashboard() {
               <MousePointerClick className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">2,350</div>
+              <div className="text-2xl font-bold">{stats.totalConversions.toLocaleString('de-DE')}</div>
               <p className="text-xs text-muted-foreground flex items-center mt-1">
                 <span className="text-emerald-500 flex items-center mr-1">
                   <ArrowUpRight className="h-3 w-3 mr-0.5" /> +15.2%
@@ -95,7 +133,7 @@ export default function Dashboard() {
               <Battery className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">32%</div>
+              <div className="text-2xl font-bold">{stats.avgUsvShare}%</div>
               <p className="text-xs text-muted-foreground flex items-center mt-1">
                 <span className="text-emerald-500 flex items-center mr-1">
                   <ArrowUpRight className="h-3 w-3 mr-0.5" /> +4.5%
@@ -110,7 +148,7 @@ export default function Dashboard() {
               <Zap className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">4.2x</div>
+              <div className="text-2xl font-bold">{stats.avgRoas}x</div>
               <p className="text-xs text-muted-foreground flex items-center mt-1">
                 <span className="text-rose-500 flex items-center mr-1">
                   <ArrowDownRight className="h-3 w-3 mr-0.5" /> -0.3
@@ -220,30 +258,20 @@ export default function Dashboard() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <Card className="col-span-1">
             <CardHeader>
-              <CardTitle>Top Keyword Rankings</CardTitle>
-              <CardDescription>Aktuelle Positionen in Google DE</CardDescription>
+              <CardTitle>Top Keywords (nach Priorität)</CardTitle>
+              <CardDescription>Basierend auf Volumen und Schwierigkeit</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {keywordRankingData.map((item) => (
-                  <div key={item.name} className="flex items-center justify-between">
+                {keywordData.map((item, index) => (
+                  <div key={item.keyword} className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div className="h-2 w-2 rounded-full bg-primary" />
-                      <span className="font-medium text-sm">{item.name}</span>
+                      <span className="font-medium text-sm truncate max-w-[140px]">{item.keyword}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="font-bold">#{item.rank}</span>
-                      {item.rank < item.prev ? (
-                        <span className="text-emerald-500 text-xs flex items-center">
-                          <ArrowUpRight className="h-3 w-3" /> {item.prev - item.rank}
-                        </span>
-                      ) : item.rank > item.prev ? (
-                        <span className="text-rose-500 text-xs flex items-center">
-                          <ArrowDownRight className="h-3 w-3" /> {item.rank - item.prev}
-                        </span>
-                      ) : (
-                        <span className="text-muted-foreground text-xs">-</span>
-                      )}
+                      <span className="text-xs text-muted-foreground">{item.volume.toLocaleString('de-DE')}</span>
+                      <span className="font-bold text-primary">{item.priorityScore}</span>
                     </div>
                   </div>
                 ))}
@@ -253,8 +281,8 @@ export default function Dashboard() {
 
           <Card className="col-span-2">
             <CardHeader>
-              <CardTitle>Content Pipeline Q1 2026</CardTitle>
-              <CardDescription>Geplante Veröffentlichungen nach Phase</CardDescription>
+              <CardTitle>Content Pipeline 2026</CardTitle>
+              <CardDescription>Aktuelle Content-Elemente nach Status</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -264,31 +292,27 @@ export default function Dashboard() {
                   <div>Status</div>
                   <div>Datum</div>
                 </div>
-                {[
-                  { title: "Strompreisentwicklung 2026", format: "Blog Post", status: "Published", date: "05. Jan" },
-                  { title: "Förderungen nutzen (Video)", format: "YouTube", status: "Published", date: "12. Jan" },
-                  { title: "USV für Homeoffice", format: "Pillar Page", status: "In Review", date: "19. Jan" },
-                  { title: "Autarkie-Rechner", format: "Tool", status: "Development", date: "26. Jan" },
-                  { title: "Solar im Winter", format: "Blog Post", status: "Planned", date: "02. Feb" },
-                ].map((item, i) => (
+                {contentPipeline.map((item, i) => (
                   <div key={i} className="grid grid-cols-4 gap-4 text-sm items-center p-2 hover:bg-muted/50 rounded-md transition-colors">
                     <div className="font-medium truncate">{item.title}</div>
                     <div>
-                      <span className="px-2 py-1 rounded-full bg-secondary text-xs">{item.format}</span>
+                      <span className="px-2 py-1 rounded-full bg-secondary text-xs">{item.type}</span>
                     </div>
                     <div>
                       <span className={cn(
                         "px-2 py-1 rounded-full text-xs flex w-fit items-center gap-1",
                         item.status === "Published" ? "bg-emerald-500/10 text-emerald-500" :
-                        item.status === "In Review" ? "bg-amber-500/10 text-amber-500" :
-                        item.status === "Development" ? "bg-blue-500/10 text-blue-500" :
+                        item.status === "Review" ? "bg-amber-500/10 text-amber-500" :
+                        item.status === "In Progress" || item.status === "Draft" ? "bg-blue-500/10 text-blue-500" :
                         "bg-muted text-muted-foreground"
                       )}>
                         <span className="h-1.5 w-1.5 rounded-full bg-current" />
                         {item.status}
                       </span>
                     </div>
-                    <div className="text-muted-foreground">{item.date}</div>
+                    <div className="text-muted-foreground">
+                      {item.dueDate ? new Date(item.dueDate).toLocaleDateString('de-DE', { day: '2-digit', month: 'short' }) : '-'}
+                    </div>
                   </div>
                 ))}
               </div>

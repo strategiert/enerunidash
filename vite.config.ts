@@ -15,6 +15,7 @@ export default defineConfig({
       "@": path.resolve(import.meta.dirname, "client", "src"),
       "@shared": path.resolve(import.meta.dirname, "shared"),
       "@assets": path.resolve(import.meta.dirname, "attached_assets"),
+      "convex/_generated/api": path.resolve(import.meta.dirname, "convex", "_generated", "api.js"),
     },
   },
   envDir: path.resolve(import.meta.dirname),
