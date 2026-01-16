@@ -320,6 +320,122 @@ export const seedAll = mutation({
   },
 });
 
+// Seed Q1 2026 detaillierter Content-Kalender (5 Posts/Woche)
+export const seedQ1ContentCalendar = mutation({
+  args: {},
+  handler: async (ctx) => {
+    // Q1 2026 Content-Kalender: 5 Posts pro Woche (Mo-Fr)
+    const q1Events = [
+      // KW 1 (6.-10. Jan)
+      { title: "Strompreisentwicklung 2026: Was Hausbesitzer jetzt wissen müssen", date: "2026-01-06", type: "SEO" as const, status: "Planned" as const, description: "Deep-Dive Blog - Awareness" },
+      { title: "Balkonkraftwerk installieren: Komplette Schritt-für-Schritt Anleitung", date: "2026-01-07", type: "SEO" as const, status: "Planned" as const, description: "How-To Tutorial - Action" },
+      { title: "Balkonkraftwerk vs. PV-Anlage: Der ultimative Vergleich 2026", date: "2026-01-08", type: "SEO" as const, status: "Planned" as const, description: "Vergleich - Consideration" },
+      { title: "Neue Solarförderungen 2026: Alle Programme im Überblick", date: "2026-01-09", type: "SEO" as const, status: "Planned" as const, description: "News - Awareness" },
+      { title: "FAQ: Die 10 häufigsten Fragen zum Balkonkraftwerk beantwortet", date: "2026-01-10", type: "SEO" as const, status: "Planned" as const, description: "FAQ - Decision" },
+
+      // KW 2 (13.-17. Jan)
+      { title: "Stromausfall in Deutschland: So häufig passiert es wirklich", date: "2026-01-13", type: "SEO" as const, status: "Planned" as const, description: "Deep-Dive - Awareness (USP)" },
+      { title: "Balkonkraftwerk beim Netzbetreiber anmelden: 5 einfache Schritte", date: "2026-01-14", type: "SEO" as const, status: "Planned" as const, description: "How-To - Action" },
+      { title: "Hoymiles vs. APSystems: Welcher Wechselrichter ist besser?", date: "2026-01-15", type: "SEO" as const, status: "Planned" as const, description: "Vergleich - Consideration" },
+      { title: "Balkonkraftwerk-Förderung Bayern 2026: Bis zu 500€ sichern", date: "2026-01-16", type: "SEO" as const, status: "Planned" as const, description: "News - Decision" },
+      { title: "Lohnt sich ein Balkonkraftwerk mit Speicher? ROI-Berechnung", date: "2026-01-17", type: "SEO" as const, status: "Planned" as const, description: "FAQ/Analysis - Decision" },
+
+      // KW 3 (20.-24. Jan)
+      { title: "Notstromaggregat vs. USV-Speicher: Was ist die bessere Wahl?", date: "2026-01-20", type: "SEO" as const, status: "Planned" as const, description: "Deep-Dive - Awareness (USP)" },
+      { title: "Balkonkraftwerk auf dem Flachdach montieren: So geht's", date: "2026-01-21", type: "SEO" as const, status: "Planned" as const, description: "How-To - Action" },
+      { title: "Top 10 Balkonkraftwerke 2026: Testsieger im Vergleich", date: "2026-01-22", type: "SEO" as const, status: "Planned" as const, description: "Vergleich - Consideration" },
+      { title: "Balkonkraftwerk-Förderung NRW: Aktuelle Programme & Anträge", date: "2026-01-23", type: "SEO" as const, status: "Planned" as const, description: "News - Decision" },
+      { title: "Wieviel Watt darf ein Balkonkraftwerk haben? Rechtslage 2026", date: "2026-01-24", type: "SEO" as const, status: "Planned" as const, description: "FAQ - Awareness" },
+
+      // KW 4 (27.-31. Jan)
+      { title: "USV für Homeoffice: Nie wieder Datenverlust bei Stromausfall", date: "2026-01-27", type: "SEO" as const, status: "Planned" as const, description: "Deep-Dive - Awareness (USP)" },
+      { title: "Balkonkraftwerk Ertrag messen: Apps und Tools im Überblick", date: "2026-01-28", type: "SEO" as const, status: "Planned" as const, description: "How-To - Action" },
+      { title: "Stromspeicher 10 kWh: Die besten Modelle im Test 2026", date: "2026-01-29", type: "SEO" as const, status: "Planned" as const, description: "Vergleich - Consideration" },
+      { title: "Solarpaket 2: Was ändert sich für Balkonkraftwerk-Besitzer?", date: "2026-01-30", type: "SEO" as const, status: "Planned" as const, description: "News - Awareness" },
+      { title: "Balkonkraftwerk Amortisation: Wann rechnet sich die Investition?", date: "2026-01-31", type: "SEO" as const, status: "Planned" as const, description: "FAQ - Decision" },
+
+      // KW 5 (3.-7. Feb)
+      { title: "Autarke Stromversorgung: Der Weg zur Energieunabhängigkeit", date: "2026-02-03", type: "SEO" as const, status: "Planned" as const, description: "Deep-Dive - Awareness" },
+      { title: "Microwechselrichter anschließen: Anleitung für Einsteiger", date: "2026-02-04", type: "SEO" as const, status: "Planned" as const, description: "How-To - Action" },
+      { title: "Balkonkraftwerk 600W vs. 800W: Was ist besser?", date: "2026-02-05", type: "SEO" as const, status: "Planned" as const, description: "Vergleich - Consideration" },
+      { title: "Balkonkraftwerk-Förderung Baden-Württemberg: So beantragen Sie", date: "2026-02-06", type: "SEO" as const, status: "Planned" as const, description: "News - Decision" },
+      { title: "Was kann ich mit 600 Watt betreiben? Rechenbeispiele", date: "2026-02-07", type: "SEO" as const, status: "Planned" as const, description: "FAQ - Awareness" },
+
+      // KW 6 (10.-14. Feb)
+      { title: "Heizung bei Stromausfall: So bleiben Sie warm", date: "2026-02-10", type: "SEO" as const, status: "Planned" as const, description: "Deep-Dive - Awareness (USP)" },
+      { title: "Balkonkraftwerk auf der Garage montieren: Genehmigung & Tipps", date: "2026-02-11", type: "SEO" as const, status: "Planned" as const, description: "How-To - Action" },
+      { title: "EcoFlow vs. Anker vs. Bluetti: Powerstations im Vergleich", date: "2026-02-12", type: "SEO" as const, status: "Planned" as const, description: "Vergleich - Consideration" },
+      { title: "Balkonkraftwerk-Förderung Brandenburg: Neues Programm 2026", date: "2026-02-13", type: "SEO" as const, status: "Planned" as const, description: "News - Decision" },
+      { title: "Balkonkraftwerk nicht angemeldet: Droht wirklich Strafe?", date: "2026-02-14", type: "SEO" as const, status: "Planned" as const, description: "FAQ - Awareness" },
+
+      // KW 7 (17.-21. Feb)
+      { title: "Insellösung Photovoltaik: Komplett unabhängig vom Stromnetz", date: "2026-02-17", type: "SEO" as const, status: "Planned" as const, description: "Deep-Dive - Awareness" },
+      { title: "Balkonkraftwerk Winkel einstellen: Optimale Ausrichtung finden", date: "2026-02-18", type: "SEO" as const, status: "Planned" as const, description: "How-To - Action" },
+      { title: "Solarpanel-Vergleich: Mono vs. Poly vs. Dünnschicht", date: "2026-02-19", type: "SEO" as const, status: "Planned" as const, description: "Vergleich - Consideration" },
+      { title: "Balkonkraftwerk-Förderung Sachsen: Bis zu 300€ Zuschuss", date: "2026-02-20", type: "SEO" as const, status: "Planned" as const, description: "News - Decision" },
+      { title: "Wie funktioniert ein Wechselrichter? Einfach erklärt", date: "2026-02-21", type: "SEO" as const, status: "Planned" as const, description: "FAQ - Awareness" },
+
+      // KW 8 (24.-28. Feb)
+      { title: "Stromspeicher Wirtschaftlichkeit: Wann lohnt sich der Kauf?", date: "2026-02-24", type: "SEO" as const, status: "Planned" as const, description: "Deep-Dive - Consideration" },
+      { title: "Balkonkraftwerk erden: Ist das notwendig?", date: "2026-02-25", type: "SEO" as const, status: "Planned" as const, description: "How-To - Action" },
+      { title: "Wohnmobil Solaranlage Test: Die besten Systeme 2026", date: "2026-02-26", type: "SEO" as const, status: "Planned" as const, description: "Vergleich - Consideration" },
+      { title: "Balkonkraftwerk-Förderung Niedersachsen: Alle Infos", date: "2026-02-27", type: "SEO" as const, status: "Planned" as const, description: "News - Decision" },
+      { title: "Balkonkraftwerk Rendite berechnen: So viel sparen Sie", date: "2026-02-28", type: "SEO" as const, status: "Planned" as const, description: "FAQ - Decision" },
+
+      // KW 9 (3.-7. März)
+      { title: "Komplett autarke Stromversorgung Einfamilienhaus: Der Guide", date: "2026-03-03", type: "SEO" as const, status: "Planned" as const, description: "Deep-Dive - Awareness" },
+      { title: "Balkonkraftwerk Wandhalterung montieren: Schritt für Schritt", date: "2026-03-04", type: "SEO" as const, status: "Planned" as const, description: "How-To - Action" },
+      { title: "Bestes Balkonkraftwerk 2026: Unsere Top-Empfehlungen", date: "2026-03-05", type: "SEO" as const, status: "Planned" as const, description: "Vergleich - Decision" },
+      { title: "Frühjahrs-Check für Ihre Solaranlage: Jetzt Ertrag optimieren", date: "2026-03-06", type: "SEO" as const, status: "Planned" as const, description: "News - Action" },
+      { title: "Balkonkraftwerk für Mieter: Was ist erlaubt?", date: "2026-03-07", type: "SEO" as const, status: "Planned" as const, description: "FAQ - Awareness" },
+
+      // KW 10 (10.-14. März)
+      { title: "Notstrom für medizinische Geräte: Lebensrettende Absicherung", date: "2026-03-10", type: "SEO" as const, status: "Planned" as const, description: "Deep-Dive - Awareness (USP)" },
+      { title: "Balkonkraftwerk Einspeisung messen: Die besten Methoden", date: "2026-03-11", type: "SEO" as const, status: "Planned" as const, description: "How-To - Action" },
+      { title: "Beste Solarmodule 2026: Effizienz-Ranking", date: "2026-03-12", type: "SEO" as const, status: "Planned" as const, description: "Vergleich - Consideration" },
+      { title: "Balkonkraftwerk-Förderung Thüringen: Jetzt beantragen", date: "2026-03-13", type: "SEO" as const, status: "Planned" as const, description: "News - Decision" },
+      { title: "Balkonkraftwerk maximale Leistung: Was ist erlaubt?", date: "2026-03-14", type: "SEO" as const, status: "Planned" as const, description: "FAQ - Awareness" },
+
+      // KW 11 (17.-21. März)
+      { title: "USV für kritische Infrastruktur: Server & Rechenzentrum absichern", date: "2026-03-17", type: "SEO" as const, status: "Planned" as const, description: "Deep-Dive - Awareness (B2B USP)" },
+      { title: "Balkonkraftwerk mit Speicher nachrüsten: So geht's", date: "2026-03-18", type: "SEO" as const, status: "Planned" as const, description: "How-To - Action (USP)" },
+      { title: "Camping Solar Komplettanlage Test: Top 5 im Vergleich", date: "2026-03-19", type: "SEO" as const, status: "Planned" as const, description: "Vergleich - Consideration" },
+      { title: "Solarpaket 2 Update: Neue Regelungen ab April", date: "2026-03-20", type: "SEO" as const, status: "Planned" as const, description: "News - Awareness" },
+      { title: "Balkonkraftwerk Ertrag im Winter: Realistische Erwartungen", date: "2026-03-21", type: "SEO" as const, status: "Planned" as const, description: "FAQ - Consideration" },
+
+      // KW 12 (24.-28. März)
+      { title: "Batteriespeicher selber bauen: DIY-Anleitung für Fortgeschrittene", date: "2026-03-24", type: "SEO" as const, status: "Planned" as const, description: "Deep-Dive - Action" },
+      { title: "Balkonkraftwerk Unterkonstruktion: Die besten Optionen", date: "2026-03-25", type: "SEO" as const, status: "Planned" as const, description: "How-To - Action" },
+      { title: "Tragbare Powerstation mit Solar: Die besten Modelle 2026", date: "2026-03-26", type: "SEO" as const, status: "Planned" as const, description: "Vergleich - Consideration" },
+      { title: "Balkonkraftwerk-Förderung RLP: Neue Mittel verfügbar", date: "2026-03-27", type: "SEO" as const, status: "Planned" as const, description: "News - Decision" },
+      { title: "Balkonkraftwerk Kosten-Nutzen: Die ehrliche Rechnung", date: "2026-03-28", type: "SEO" as const, status: "Planned" as const, description: "FAQ - Decision" },
+
+      // KW 13 (31. März)
+      { title: "Q1 2026 Rückblick: Solar-Markt Entwicklung & Trends", date: "2026-03-31", type: "SEO" as const, status: "Planned" as const, description: "Deep-Dive - Awareness" },
+    ];
+
+    let insertedCount = 0;
+    for (const event of q1Events) {
+      // Prüfen ob Event bereits existiert
+      const existing = await ctx.db
+        .query("calendarEvents")
+        .filter((q) => q.eq(q.field("title"), event.title))
+        .first();
+
+      if (!existing) {
+        await ctx.db.insert("calendarEvents", event);
+        insertedCount++;
+      }
+    }
+
+    return {
+      message: `Q1 2026 Content Calendar seeded`,
+      inserted: insertedCount,
+      total: q1Events.length,
+    };
+  },
+});
+
 // Clear all data (für Entwicklung)
 export const clearAll = mutation({
   args: {},
