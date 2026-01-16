@@ -248,7 +248,7 @@ export const seedAll = mutation({
     }
 
     // ============ MONTHLY KPIs SEEDEN ============
-    const months = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
+    const months = ["Jan", "Feb", "Mar", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
     const kpiTemplate = [
       { revenue: 50000, target: 45000, conversions: 180, usvShare: 28, roas: 4.2, organicTraffic: 12000, paidTraffic: 8500 },
       { revenue: 65000, target: 50000, conversions: 220, usvShare: 30, roas: 4.5, organicTraffic: 15000, paidTraffic: 10000 },

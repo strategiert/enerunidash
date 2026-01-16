@@ -112,7 +112,7 @@ export default function ContentPage() {
     if (!yearOverview) return [];
 
     const quarters = [
-      { quarter: "Q1: Start & Planung", focus: "Neujahrsvorsätze & Sicherheit", months: ["Jan", "Feb", "Mär"] },
+      { quarter: "Q1: Start & Planung", focus: "Neujahrsvorsätze & Sicherheit", months: ["Jan", "Feb", "Mar"] },
       { quarter: "Q2: Hochsaison Start", focus: "Installation & Ertrag", months: ["Apr", "Mai", "Jun"] },
       { quarter: "Q3: Hochsaison & Urlaub", focus: "Optimierung & Mobil", months: ["Jul", "Aug", "Sep"] },
       { quarter: "Q4: Winter & Planung", focus: "Vorbereitung & Deals", months: ["Okt", "Nov", "Dez"] },

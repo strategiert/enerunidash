@@ -11,7 +11,7 @@ export const getMonthlyKPIs = query({
       kpis = kpis.filter(k => k.year === args.year);
     }
 
-    const monthOrder = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
+    const monthOrder = ["Jan", "Feb", "Mar", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
     kpis.sort((a, b) => monthOrder.indexOf(a.month) - monthOrder.indexOf(b.month));
 
     return kpis;

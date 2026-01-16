@@ -177,7 +177,7 @@ export const getStats = query({
 
     const byMonth = pieces.reduce((acc, p) => {
       const month = new Date(p.publishDate).getMonth();
-      const monthNames = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
+      const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
       acc[monthNames[month]] = (acc[monthNames[month]] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
@@ -225,7 +225,7 @@ export const getYearOverview = query({
     const pieces = await ctx.db.query("contentPieces").collect();
     const yearPieces = pieces.filter(p => new Date(p.publishDate).getFullYear() === args.year);
 
-    const months = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
+    const months = ["Jan", "Feb", "Mar", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
 
     return months.map((month, index) => {
       const monthPieces = yearPieces.filter(p => new Date(p.publishDate).getMonth() === index);
