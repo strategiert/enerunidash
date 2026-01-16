@@ -86,23 +86,23 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-16 border-b border-border bg-background/50 backdrop-blur flex items-center justify-between px-6 shrink-0 z-10">
-          <h1 className="text-xl font-semibold tracking-tight">
-            {navItems.find(i => i.href === location)?.label || "Dashboard"}
-          </h1>
-          <div className="flex items-center gap-4">
-            <div className="text-sm text-muted-foreground">
-              <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-pulse"></span>
-              System Status: Online
+        <ScrollArea className="flex-1 h-full">
+          <header className="h-16 border-b border-border bg-background/50 backdrop-blur flex items-center justify-between px-6 sticky top-0 z-10">
+            <h1 className="text-xl font-semibold tracking-tight">
+              {navItems.find(i => i.href === location)?.label || "Dashboard"}
+            </h1>
+            <div className="flex items-center gap-4">
+              <div className="text-sm text-muted-foreground">
+                <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-pulse"></span>
+                System Status: Online
+              </div>
+              <div className="h-8 w-8 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-xs font-bold text-primary">
+                MK
+              </div>
             </div>
-            <div className="h-8 w-8 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-xs font-bold text-primary">
-              MK
-            </div>
-          </div>
-        </header>
-        
-        <ScrollArea className="flex-1 p-6">
-          <div className="container max-w-7xl mx-auto pb-10">
+          </header>
+          
+          <div className="p-6 container max-w-7xl mx-auto pb-10">
             {children}
           </div>
         </ScrollArea>
