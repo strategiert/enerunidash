@@ -1,72 +1,58 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowDownRight, ArrowUpRight, Battery, DollarSign, Loader2, MousePointerClick, Users, Zap } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ArrowDownRight, ArrowUpRight, Battery, DollarSign, FileText, MousePointerClick, Users, Zap } from "lucide-react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useQuery } from "convex/react";
 import { api } from "convex/_generated/api";
+import { useState, useMemo } from "react";
 
-// Fallback Mock Data (used when Convex is not available)
-const fallbackRevenueData = [
-  { month: "Jan", revenue: 50000, target: 45000 },
-  { month: "Feb", revenue: 65000, target: 50000 },
-  { month: "Mär", revenue: 85000, target: 70000 },
-  { month: "Apr", revenue: 120000, target: 100000 },
-  { month: "Mai", revenue: 180000, target: 150000 },
-  { month: "Jun", revenue: 220000, target: 180000 },
-  { month: "Jul", revenue: 250000, target: 200000 },
-  { month: "Aug", revenue: 210000, target: 190000 },
-  { month: "Sep", revenue: 160000, target: 140000 },
-  { month: "Okt", revenue: 110000, target: 100000 },
-  { month: "Nov", revenue: 90000, target: 80000 },
-  { month: "Dez", revenue: 70000, target: 60000 },
-];
-
-const fallbackChannelData = [
-  { name: "Referral", value: 4085476, color: "var(--chart-1)" },
-  { name: "Paid Search", value: 3502042, color: "var(--chart-2)" },
-  { name: "Direct", value: 2775280, color: "var(--chart-3)" },
-  { name: "Organic", value: 1727388, color: "var(--chart-4)" },
-  { name: "Social", value: 86225, color: "var(--chart-5)" },
-];
-
-const fallbackKeywordData = [
-  { keyword: "Balkonkraftwerk", priorityScore: 95, volume: 22000 },
-  { keyword: "Notstromaggregat", priorityScore: 90, volume: 8100 },
-  { keyword: "USV Solar", priorityScore: 88, volume: 1200 },
-  { keyword: "Autarkie", priorityScore: 85, volume: 4400 },
-  { keyword: "Stromspeicher", priorityScore: 82, volume: 18000 },
-];
-
-const fallbackYTDStats = {
-  totalRevenue: 1610000,
-  totalConversions: 2350,
-  avgUsvShare: 32,
-  avgRoas: 4.2,
-};
-
-const fallbackContentItems = [
-  { title: "Strompreisentwicklung 2026", type: "Blog", status: "Published", dueDate: "2026-01-05" },
-  { title: "Förderungen nutzen (Video)", type: "Video", status: "Published", dueDate: "2026-01-12" },
-  { title: "USV für Homeoffice", type: "Pillar Page", status: "Review", dueDate: "2026-01-19" },
-  { title: "Autarkie-Rechner", type: "Tool", status: "In Progress", dueDate: "2026-01-26" },
-  { title: "Solar im Winter", type: "Blog", status: "Planned", dueDate: "2026-02-02" },
-];
+function cn(...classes: (string | undefined | null | false)[]) {
+  return classes.filter(Boolean).join(' ');
+}
 
 export default function Dashboard() {
-  // Convex Queries
-  const monthlyKPIs = useQuery(api.kpis.getMonthlyKPIs, { year: 2026 });
-  const ytdStats = useQuery(api.kpis.getYTDStats, { year: 2026 });
-  const channelAttribution = useQuery(api.kpis.getChannelAttribution, { year: 2026 });
-  const topKeywords = useQuery(api.keywords.list, { limit: 5 });
-  const contentItems = useQuery(api.content.listItems, {});
+  const [selectedYear, setSelectedYear] = useState(2026);
 
-  // Use Convex data or fallback to mock data
-  const revenueData = monthlyKPIs ?? fallbackRevenueData;
-  const channelData = channelAttribution ?? fallbackChannelData;
-  const keywordData = topKeywords ?? fallbackKeywordData;
-  const stats = ytdStats ?? fallbackYTDStats;
-  const contentPipeline = contentItems?.slice(0, 5) ?? fallbackContentItems;
+  // Convex Queries - Alle Daten aus der einheitlichen Datenbank
+  const monthlyKPIs = useQuery(api.kpis.getMonthlyKPIs, { year: selectedYear });
+  const ytdStats = useQuery(api.kpis.getYTDStats, { year: selectedYear });
+  const channelAttribution = useQuery(api.kpis.getChannelAttribution, { year: selectedYear });
+  const topKeywords = useQuery(api.keywords.list, { limit: 5 });
+  const contentStats = useQuery(api.contentPieces.getStats, { year: selectedYear });
+  const yearOverview = useQuery(api.contentPieces.getYearOverview, { year: selectedYear });
+  const upcomingContent = useQuery(api.contentPieces.getUpcoming, { days: 30 });
+
+  // Chart data vorbereiten
+  const revenueData = useMemo(() => {
+    if (!monthlyKPIs) return [];
+    return monthlyKPIs.map(kpi => ({
+      month: kpi.month,
+      revenue: kpi.revenue,
+      target: kpi.target,
+    }));
+  }, [monthlyKPIs]);
+
+  const channelData = useMemo(() => {
+    if (!channelAttribution) return [];
+    return channelAttribution.map(ch => ({
+      name: ch.name,
+      value: ch.value,
+      color: ch.color || "var(--chart-1)",
+    }));
+  }, [channelAttribution]);
+
+  const contentByMonthData = useMemo(() => {
+    if (!yearOverview) return [];
+    return yearOverview.map(m => ({
+      month: m.month,
+      seo: m.seo,
+      social: m.social,
+      email: m.email,
+      total: m.total,
+    }));
+  }, [yearOverview]);
 
   // Format revenue for display
   const formatRevenue = (value: number) => {
@@ -75,6 +61,8 @@ export default function Dashboard() {
     return `€${value}`;
   };
 
+  const stats = ytdStats ?? { totalRevenue: 0, totalConversions: 0, avgUsvShare: 0, avgRoas: 0 };
+
   return (
     <DashboardLayout>
       <div className="space-y-8">
@@ -82,16 +70,19 @@ export default function Dashboard() {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-3xl font-bold tracking-tight">Marketing Übersicht</h2>
-            <p className="text-muted-foreground mt-1">Performance-Daten und KPIs für enerunity 2026</p>
+            <p className="text-muted-foreground mt-1">Performance-Daten und KPIs für enerunity {selectedYear}</p>
           </div>
-          <div className="flex items-center gap-2 bg-card border border-border p-1 rounded-lg">
-            <Tabs defaultValue="year" className="w-[400px]">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="month">Monat</TabsTrigger>
-                <TabsTrigger value="quarter">Quartal</TabsTrigger>
-                <TabsTrigger value="year">Jahr</TabsTrigger>
-              </TabsList>
-            </Tabs>
+          <div className="flex items-center gap-4">
+            <Select value={String(selectedYear)} onValueChange={(v) => setSelectedYear(Number(v))}>
+              <SelectTrigger className="w-[120px]">
+                <SelectValue placeholder="Jahr" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="2026">2026</SelectItem>
+                <SelectItem value="2027">2027</SelectItem>
+                <SelectItem value="2028">2028</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
@@ -144,16 +135,16 @@ export default function Dashboard() {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">ROAS (Gesamt)</CardTitle>
-              <Zap className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Content Pieces</CardTitle>
+              <FileText className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.avgRoas}x</div>
+              <div className="text-2xl font-bold">{contentStats?.total || 0}</div>
               <p className="text-xs text-muted-foreground flex items-center mt-1">
-                <span className="text-rose-500 flex items-center mr-1">
-                  <ArrowDownRight className="h-3 w-3 mr-0.5" /> -0.3
+                <span className="text-emerald-500 flex items-center mr-1">
+                  {contentStats?.published || 0} veröffentlicht
                 </span>
-                vs. Vormonat
+                / {contentStats?.inProgress || 0} in Arbeit
               </p>
             </CardContent>
           </Card>
@@ -164,61 +155,68 @@ export default function Dashboard() {
           <Card className="col-span-4">
             <CardHeader>
               <CardTitle>Umsatzentwicklung & Prognose</CardTitle>
-              <CardDescription>Vergleich Ist-Umsatz vs. Zielvorgabe 2026</CardDescription>
+              <CardDescription>Vergleich Ist-Umsatz vs. Zielvorgabe {selectedYear}</CardDescription>
             </CardHeader>
             <CardContent className="pl-2">
               <div className="h-[350px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={revenueData}>
-                    <defs>
-                      <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="var(--primary)" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                    <XAxis 
-                      dataKey="month" 
-                      stroke="var(--muted-foreground)" 
-                      fontSize={12} 
-                      tickLine={false} 
-                      axisLine={false} 
-                    />
-                    <YAxis 
-                      stroke="var(--muted-foreground)" 
-                      fontSize={12} 
-                      tickLine={false} 
-                      axisLine={false} 
-                      tickFormatter={(value) => `€${value / 1000}k`} 
-                    />
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: 'var(--radius)' }}
-                      itemStyle={{ color: 'var(--foreground)' }}
-                    />
-                    <Area 
-                      type="monotone" 
-                      dataKey="revenue" 
-                      stroke="var(--primary)" 
-                      strokeWidth={2}
-                      fillOpacity={1} 
-                      fill="url(#colorRevenue)" 
-                      name="Umsatz"
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="target" 
-                      stroke="var(--muted-foreground)" 
-                      strokeDasharray="5 5" 
-                      strokeWidth={2}
-                      dot={false}
-                      name="Ziel"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
+                {revenueData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={revenueData}>
+                      <defs>
+                        <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="var(--primary)" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                      <XAxis
+                        dataKey="month"
+                        stroke="var(--muted-foreground)"
+                        fontSize={12}
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <YAxis
+                        stroke="var(--muted-foreground)"
+                        fontSize={12}
+                        tickLine={false}
+                        axisLine={false}
+                        tickFormatter={(value) => `€${value / 1000}k`}
+                      />
+                      <Tooltip
+                        contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: 'var(--radius)' }}
+                        itemStyle={{ color: 'var(--foreground)' }}
+                        formatter={(value: number) => [`€${value.toLocaleString()}`, '']}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="revenue"
+                        stroke="var(--primary)"
+                        strokeWidth={2}
+                        fillOpacity={1}
+                        fill="url(#colorRevenue)"
+                        name="Umsatz"
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="target"
+                        stroke="var(--muted-foreground)"
+                        strokeDasharray="5 5"
+                        strokeWidth={2}
+                        dot={false}
+                        name="Ziel"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-full flex items-center justify-center text-muted-foreground">
+                    Lade Umsatzdaten...
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
-          
+
           <Card className="col-span-3">
             <CardHeader>
               <CardTitle>Umsatz nach Kanal</CardTitle>
@@ -226,35 +224,41 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="h-[350px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={channelData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={100}
-                      paddingAngle={2}
-                      dataKey="value"
-                    >
-                      {channelData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} stroke="var(--background)" strokeWidth={2} />
-                      ))}
-                    </Pie>
-                    <Tooltip 
-                      formatter={(value: number) => `€${(value / 1000000).toFixed(2)}M`}
-                      contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: 'var(--radius)' }}
-                      itemStyle={{ color: 'var(--foreground)' }}
-                    />
-                    <Legend verticalAlign="bottom" height={36} iconType="circle" />
-                  </PieChart>
-                </ResponsiveContainer>
+                {channelData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={channelData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={100}
+                        paddingAngle={2}
+                        dataKey="value"
+                      >
+                        {channelData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} stroke="var(--background)" strokeWidth={2} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(value: number) => `€${(value / 1000000).toFixed(2)}M`}
+                        contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: 'var(--radius)' }}
+                        itemStyle={{ color: 'var(--foreground)' }}
+                      />
+                      <Legend verticalAlign="bottom" height={36} iconType="circle" />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-full flex items-center justify-center text-muted-foreground">
+                    Lade Channel-Daten...
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Detailed Stats */}
+        {/* Content & Keywords */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <Card className="col-span-1">
             <CardHeader>
@@ -263,8 +267,8 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {keywordData.map((item, index) => (
-                  <div key={item.keyword} className="flex items-center justify-between">
+                {topKeywords ? topKeywords.map((item) => (
+                  <div key={item._id} className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div className="h-2 w-2 rounded-full bg-primary" />
                       <span className="font-medium text-sm truncate max-w-[140px]">{item.keyword}</span>
@@ -274,56 +278,109 @@ export default function Dashboard() {
                       <span className="font-bold text-primary">{item.priorityScore}</span>
                     </div>
                   </div>
-                ))}
+                )) : (
+                  <div className="text-sm text-muted-foreground">Lade Keywords...</div>
+                )}
               </div>
             </CardContent>
           </Card>
 
           <Card className="col-span-2">
             <CardHeader>
-              <CardTitle>Content Pipeline 2026</CardTitle>
-              <CardDescription>Aktuelle Content-Elemente nach Status</CardDescription>
+              <CardTitle>Content Pipeline {selectedYear}</CardTitle>
+              <CardDescription>Nächste 30 Tage - Content nach Status</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="grid grid-cols-4 gap-4 text-sm font-medium text-muted-foreground mb-2">
+                <div className="grid grid-cols-5 gap-4 text-sm font-medium text-muted-foreground mb-2">
                   <div>Thema</div>
                   <div>Format</div>
+                  <div>Kanal</div>
                   <div>Status</div>
                   <div>Datum</div>
                 </div>
-                {contentPipeline.map((item, i) => (
-                  <div key={i} className="grid grid-cols-4 gap-4 text-sm items-center p-2 hover:bg-muted/50 rounded-md transition-colors">
-                    <div className="font-medium truncate">{item.title}</div>
-                    <div>
-                      <span className="px-2 py-1 rounded-full bg-secondary text-xs">{item.type}</span>
+                {upcomingContent && upcomingContent.length > 0 ? (
+                  upcomingContent.slice(0, 5).map((item) => (
+                    <div key={item._id} className="grid grid-cols-5 gap-4 text-sm items-center p-2 hover:bg-muted/50 rounded-md transition-colors">
+                      <div className="font-medium truncate">{item.title}</div>
+                      <div>
+                        <span className="px-2 py-1 rounded-full bg-secondary text-xs">{item.contentType}</span>
+                      </div>
+                      <div>
+                        <span className="text-xs text-muted-foreground">{item.channel}</span>
+                      </div>
+                      <div>
+                        <span className={cn(
+                          "px-2 py-1 rounded-full text-xs flex w-fit items-center gap-1",
+                          item.status === "Published" ? "bg-emerald-500/10 text-emerald-500" :
+                          item.status === "Review" ? "bg-amber-500/10 text-amber-500" :
+                          item.status === "In Progress" || item.status === "Draft" ? "bg-blue-500/10 text-blue-500" :
+                          item.status === "Scheduled" ? "bg-purple-500/10 text-purple-500" :
+                          "bg-muted text-muted-foreground"
+                        )}>
+                          <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                          {item.status}
+                        </span>
+                      </div>
+                      <div className="text-muted-foreground">
+                        {new Date(item.publishDate).toLocaleDateString('de-DE', { day: '2-digit', month: 'short' })}
+                      </div>
                     </div>
-                    <div>
-                      <span className={cn(
-                        "px-2 py-1 rounded-full text-xs flex w-fit items-center gap-1",
-                        item.status === "Published" ? "bg-emerald-500/10 text-emerald-500" :
-                        item.status === "Review" ? "bg-amber-500/10 text-amber-500" :
-                        item.status === "In Progress" || item.status === "Draft" ? "bg-blue-500/10 text-blue-500" :
-                        "bg-muted text-muted-foreground"
-                      )}>
-                        <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                        {item.status}
-                      </span>
-                    </div>
-                    <div className="text-muted-foreground">
-                      {item.dueDate ? new Date(item.dueDate).toLocaleDateString('de-DE', { day: '2-digit', month: 'short' }) : '-'}
-                    </div>
+                  ))
+                ) : (
+                  <div className="text-sm text-muted-foreground text-center py-4">
+                    {upcomingContent === undefined ? "Lade Content..." : "Keine anstehenden Content-Pieces"}
                   </div>
-                ))}
+                )}
               </div>
             </CardContent>
           </Card>
         </div>
+
+        {/* Content Distribution Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Content-Verteilung {selectedYear}</CardTitle>
+            <CardDescription>Content Pieces nach Kanal pro Monat</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px] w-full">
+              {contentByMonthData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={contentByMonthData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                    <XAxis
+                      dataKey="month"
+                      stroke="var(--muted-foreground)"
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis
+                      stroke="var(--muted-foreground)"
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: 'var(--radius)' }}
+                      itemStyle={{ color: 'var(--foreground)' }}
+                    />
+                    <Legend />
+                    <Bar dataKey="seo" fill="var(--chart-1)" name="SEO" stackId="a" radius={[0, 0, 0, 0]} />
+                    <Bar dataKey="social" fill="var(--chart-2)" name="Social" stackId="a" radius={[0, 0, 0, 0]} />
+                    <Bar dataKey="email" fill="var(--chart-3)" name="Email" stackId="a" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-full flex items-center justify-center text-muted-foreground">
+                  Lade Content-Daten...
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </DashboardLayout>
   );
-}
-
-function cn(...classes: (string | undefined | null | false)[]) {
-  return classes.filter(Boolean).join(' ');
 }

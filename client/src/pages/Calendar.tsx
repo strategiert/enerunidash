@@ -2,7 +2,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -11,476 +11,521 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "convex/_generated/api";
-import { ChevronLeft, ChevronRight, Edit, Plus, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Edit, Plus, Trash2, Calendar as CalendarIcon, Filter } from "lucide-react";
 import { useState, useMemo } from "react";
 
-const eventTypeStyles: Record<string, string> = {
+const channelStyles: Record<string, string> = {
   SEO: "bg-blue-500/20 text-blue-500 border-blue-500/30",
   SEA: "bg-purple-500/20 text-purple-500 border-purple-500/30",
   Social: "bg-pink-500/20 text-pink-500 border-pink-500/30",
-  Newsletter: "bg-orange-500/20 text-orange-500 border-orange-500/30",
+  Email: "bg-amber-500/20 text-amber-500 border-amber-500/30",
   PR: "bg-emerald-500/20 text-emerald-500 border-emerald-500/30",
-  Product: "bg-slate-500/20 text-slate-500 border-slate-500/30",
+  Product: "bg-cyan-500/20 text-cyan-500 border-cyan-500/30",
 };
 
-const statusColors: Record<string, string> = {
-  Planned: "text-muted-foreground",
-  Draft: "text-amber-500",
-  Review: "text-blue-500",
-  Published: "text-emerald-500",
-  Active: "text-emerald-500",
-  Done: "text-emerald-500",
-  Sent: "text-emerald-500",
-  Dev: "text-purple-500",
+const statusStyles: Record<string, string> = {
+  Idea: "bg-gray-500/20 text-gray-400",
+  Planned: "bg-slate-500/20 text-slate-400",
+  Draft: "bg-yellow-500/20 text-yellow-500",
+  "In Progress": "bg-blue-500/20 text-blue-400",
+  Review: "bg-orange-500/20 text-orange-400",
+  Scheduled: "bg-indigo-500/20 text-indigo-400",
+  Published: "bg-emerald-500/20 text-emerald-400",
+  Active: "bg-green-500/20 text-green-400",
+  Paused: "bg-amber-500/20 text-amber-400",
+  Ended: "bg-gray-500/20 text-gray-500",
 };
+
+const contentTypes = ["Blog", "Video", "Tool", "Infographic", "Pillar Page", "Case Study", "Social Post", "Newsletter", "PR", "SEA Ad"] as const;
+const channels = ["SEO", "SEA", "Social", "Email", "PR", "Product"] as const;
+const statuses = ["Idea", "Planned", "Draft", "In Progress", "Review", "Scheduled", "Published", "Active", "Paused", "Ended"] as const;
+const journeyPhases = ["Awareness", "Consideration", "Decision", "Action", "Retention"] as const;
 
 export default function CalendarPage() {
-  const [currentMonth, setCurrentMonth] = useState(0); // 0 = Jan 2026
-  const [selectedType, setSelectedType] = useState<string>("all");
-  const [selectedStatus, setSelectedStatus] = useState<string>("all");
+  const [currentDate, setCurrentDate] = useState(new Date(2026, 0, 1)); // Start at Jan 2026
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [channelFilter, setChannelFilter] = useState<string>("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingEvent, setEditingEvent] = useState<any>(null);
-  const [selectedDate, setSelectedDate] = useState<string>("");
+  const [editingPiece, setEditingPiece] = useState<any>(null);
 
-  const months = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
-
-  // Convex Queries
-  const allEvents = useQuery(api.calendarEvents.list, { month: currentMonth, year: 2026 });
-  const upcomingEvents = useQuery(api.calendarEvents.getUpcoming, { limit: 10 });
-  const eventStats = useQuery(api.calendarEvents.getStatsByType, {});
-
-  // Convex Mutations
-  const addEvent = useMutation(api.calendarEvents.add);
-  const updateEvent = useMutation(api.calendarEvents.update);
-  const removeEvent = useMutation(api.calendarEvents.remove);
-
-  // Form State
+  // Form state
   const [formData, setFormData] = useState({
     title: "",
-    date: "",
-    type: "SEO" as const,
-    status: "Planned" as const,
     description: "",
+    publishDate: "",
+    contentType: "Blog" as typeof contentTypes[number],
+    channel: "SEO" as typeof channels[number],
+    status: "Planned" as typeof statuses[number],
+    journeyPhase: "Awareness" as typeof journeyPhases[number],
+    assignee: "",
+    notes: "",
   });
 
-  // Filtered events
-  const filteredEvents = useMemo(() => {
-    if (!allEvents) return [];
+  // Convex queries
+  const contentPieces = useQuery(api.contentPieces.getByMonth, {
+    year: currentDate.getFullYear(),
+    month: currentDate.getMonth() + 1,
+  });
 
-    let filtered = [...allEvents];
+  const stats = useQuery(api.contentPieces.getStats, { year: currentDate.getFullYear() });
+  const pillars = useQuery(api.contentPieces.getByPillar, {});
 
-    if (selectedType !== "all") {
-      filtered = filtered.filter(e => e.type === selectedType);
+  // Mutations
+  const createPiece = useMutation(api.contentPieces.create);
+  const updatePiece = useMutation(api.contentPieces.update);
+  const deletePiece = useMutation(api.contentPieces.remove);
+
+  // Filter content by channel
+  const filteredContent = useMemo(() => {
+    if (!contentPieces) return [];
+    if (channelFilter === "all") return contentPieces;
+    return contentPieces.filter(p => p.channel === channelFilter);
+  }, [contentPieces, channelFilter]);
+
+  // Group content by date
+  const contentByDate = useMemo(() => {
+    const grouped: Record<string, typeof filteredContent> = {};
+    for (const piece of filteredContent) {
+      if (!grouped[piece.publishDate]) {
+        grouped[piece.publishDate] = [];
+      }
+      grouped[piece.publishDate].push(piece);
     }
+    return grouped;
+  }, [filteredContent]);
 
-    if (selectedStatus !== "all") {
-      filtered = filtered.filter(e => e.status === selectedStatus);
-    }
-
-    return filtered;
-  }, [allEvents, selectedType, selectedStatus]);
-
-  const daysInMonth = (month: number, year: number) => new Date(year, month + 1, 0).getDate();
-  const firstDayOfMonth = (month: number, year: number) => {
-    const day = new Date(year, month, 1).getDay();
-    return day === 0 ? 7 : day; // Convert Sunday (0) to 7 for Monday-first week
+  // Calendar helper functions
+  const getDaysInMonth = (date: Date) => {
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
   };
 
-  const handleAddEvent = (date: string) => {
-    setSelectedDate(date);
+  const getFirstDayOfMonth = (date: Date) => {
+    const day = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+    return day === 0 ? 6 : day - 1; // Monday = 0
+  };
+
+  const navigateMonth = (direction: number) => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + direction, 1));
+  };
+
+  const navigateYear = (direction: number) => {
+    setCurrentDate(new Date(currentDate.getFullYear() + direction, currentDate.getMonth(), 1));
+  };
+
+  // Dialog handlers
+  const openCreateDialog = (date?: string) => {
+    setEditingPiece(null);
     setFormData({
-      ...formData,
-      date: date,
+      title: "",
+      description: "",
+      publishDate: date || new Date().toISOString().split('T')[0],
+      contentType: "Blog",
+      channel: "SEO",
+      status: "Planned",
+      journeyPhase: "Awareness",
+      assignee: "",
+      notes: "",
     });
-    setEditingEvent(null);
     setIsDialogOpen(true);
   };
 
-  const handleEditEvent = (event: any) => {
-    setEditingEvent(event);
+  const openEditDialog = (piece: any) => {
+    setEditingPiece(piece);
     setFormData({
-      title: event.title,
-      date: event.date,
-      type: event.type,
-      status: event.status,
-      description: event.description || "",
+      title: piece.title,
+      description: piece.description || "",
+      publishDate: piece.publishDate,
+      contentType: piece.contentType,
+      channel: piece.channel,
+      status: piece.status,
+      journeyPhase: piece.journeyPhase,
+      assignee: piece.assignee || "",
+      notes: piece.notes || "",
     });
     setIsDialogOpen(true);
   };
 
   const handleSubmit = async () => {
-    if (editingEvent) {
-      await updateEvent({
-        id: editingEvent._id,
-        title: formData.title,
-        date: formData.date,
-        type: formData.type,
-        status: formData.status,
-        description: formData.description || undefined,
+    if (editingPiece) {
+      await updatePiece({
+        id: editingPiece._id,
+        ...formData,
       });
     } else {
-      await addEvent({
-        title: formData.title,
-        date: formData.date,
-        type: formData.type,
-        status: formData.status,
-        description: formData.description || undefined,
-      });
+      await createPiece(formData);
     }
     setIsDialogOpen(false);
-    resetForm();
   };
 
   const handleDelete = async (id: any) => {
-    if (confirm("Möchten Sie dieses Event wirklich löschen?")) {
-      await removeEvent({ id });
+    if (confirm("Content-Piece wirklich löschen?")) {
+      await deletePiece({ id });
     }
   };
 
-  const resetForm = () => {
-    setEditingEvent(null);
-    setSelectedDate("");
-    setFormData({
-      title: "",
-      date: "",
-      type: "SEO",
-      status: "Planned",
-      description: "",
-    });
-  };
+  // Get content for selected date
+  const selectedDateContent = selectedDate ? contentByDate[selectedDate] || [] : [];
 
-  const renderCalendarDays = () => {
-    const year = 2026;
-    const totalDays = daysInMonth(currentMonth, year);
-    const startDay = firstDayOfMonth(currentMonth, year);
+  // Render calendar
+  const renderCalendar = () => {
+    const daysInMonth = getDaysInMonth(currentDate);
+    const firstDay = getFirstDayOfMonth(currentDate);
     const days = [];
-    const today = new Date();
-    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const weekDays = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 
-    // Empty cells for previous month
-    for (let i = 1; i < startDay; i++) {
-      days.push(<div key={`empty-${i}`} className="h-32 border border-border/50 bg-muted/20" />);
+    // Header
+    days.push(
+      <div key="header" className="grid grid-cols-7 mb-2">
+        {weekDays.map(day => (
+          <div key={day} className="text-center text-xs font-medium text-muted-foreground py-2">
+            {day}
+          </div>
+        ))}
+      </div>
+    );
+
+    // Days
+    const cells = [];
+    for (let i = 0; i < firstDay; i++) {
+      cells.push(<div key={`empty-${i}`} className="p-1" />);
     }
 
-    // Days of current month
-    for (let day = 1; day <= totalDays; day++) {
-      const dateStr = `2026-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      const dayEvents = filteredEvents.filter(e => e.date === dateStr);
-      const isToday = dateStr === todayStr;
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const dayContent = contentByDate[dateStr] || [];
+      const isSelected = selectedDate === dateStr;
+      const isToday = dateStr === new Date().toISOString().split('T')[0];
 
-      days.push(
+      cells.push(
         <div
           key={day}
-          className="h-32 border border-border/50 p-2 hover:bg-muted/30 transition-colors relative group"
+          onClick={() => setSelectedDate(dateStr)}
+          className={cn(
+            "p-1 min-h-[100px] border border-border/50 rounded-md cursor-pointer transition-colors hover:bg-muted/30",
+            isSelected && "ring-2 ring-primary bg-primary/5",
+            isToday && "bg-primary/10"
+          )}
         >
-          <span className={cn(
-            "text-sm font-medium h-6 w-6 flex items-center justify-center rounded-full mb-1",
-            isToday ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+          <div className={cn(
+            "text-sm font-medium mb-1",
+            isToday && "text-primary"
           )}>
             {day}
-          </span>
-          <div className="space-y-1 overflow-y-auto max-h-[80px] no-scrollbar">
-            {dayEvents.map(event => (
+          </div>
+          <div className="space-y-0.5">
+            {dayContent.slice(0, 3).map((piece: any) => (
               <div
-                key={event._id}
+                key={piece._id}
                 className={cn(
-                  "text-[10px] px-1.5 py-0.5 rounded border truncate cursor-pointer hover:opacity-80 flex items-center gap-1",
-                  eventTypeStyles[event.type]
+                  "text-[10px] px-1 py-0.5 rounded truncate border",
+                  channelStyles[piece.channel]
                 )}
-                onClick={() => handleEditEvent(event)}
+                title={piece.title}
               >
-                <span className={cn("h-1.5 w-1.5 rounded-full", statusColors[event.status]?.replace("text-", "bg-"))} />
-                {event.title}
+                {piece.title}
               </div>
             ))}
+            {dayContent.length > 3 && (
+              <div className="text-[10px] text-muted-foreground px-1">
+                +{dayContent.length - 3} mehr
+              </div>
+            )}
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute bottom-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-            onClick={() => handleAddEvent(dateStr)}
-          >
-            <Plus className="h-3 w-3" />
-          </Button>
         </div>
       );
     }
 
+    days.push(
+      <div key="days" className="grid grid-cols-7 gap-1">
+        {cells}
+      </div>
+    );
+
     return days;
   };
 
-  // Calculate milestones
-  const milestones = useMemo(() => {
-    const today = new Date();
-    return [
-      { title: "Q1 Review", date: "31. Mär", days: Math.ceil((new Date(2026, 2, 31).getTime() - today.getTime()) / (1000 * 60 * 60 * 24)) },
-      { title: "Sommer-Kampagne Start", date: "01. Mai", days: Math.ceil((new Date(2026, 4, 1).getTime() - today.getTime()) / (1000 * 60 * 60 * 24)) },
-      { title: "Black Friday Prep", date: "01. Okt", days: Math.ceil((new Date(2026, 9, 1).getTime() - today.getTime()) / (1000 * 60 * 60 * 24)) },
-      { title: "Jahresabschluss", date: "15. Dez", days: Math.ceil((new Date(2026, 11, 15).getTime() - today.getTime()) / (1000 * 60 * 60 * 24)) },
-    ].filter(m => m.days > 0);
-  }, []);
+  const monthNames = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
+        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">Jahresplaner 2026</h2>
-            <p className="text-muted-foreground mt-1">Übersicht aller Marketing-Aktivitäten und Kampagnen</p>
+            <h2 className="text-3xl font-bold tracking-tight">Content-Kalender</h2>
+            <p className="text-muted-foreground mt-1">
+              {stats?.total || 0} Content-Pieces für {currentDate.getFullYear()} geplant
+            </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={() => setCurrentMonth(Math.max(0, currentMonth - 1))}>
-              <ChevronLeft className="h-4 w-4" />
+            <Select value={channelFilter} onValueChange={setChannelFilter}>
+              <SelectTrigger className="w-[150px]">
+                <Filter className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Filter" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Alle Kanäle</SelectItem>
+                {channels.map(channel => (
+                  <SelectItem key={channel} value={channel}>{channel}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button onClick={() => openCreateDialog()}>
+              <Plus className="h-4 w-4 mr-2" /> Neuer Content
             </Button>
-            <div className="w-32 text-center font-medium text-lg">
-              {months[currentMonth]} 2026
-            </div>
-            <Button variant="outline" size="icon" onClick={() => setCurrentMonth(Math.min(11, currentMonth + 1))}>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-            <div className="h-6 w-px bg-border mx-2" />
-            <Dialog open={isDialogOpen} onOpenChange={(open) => {
-              setIsDialogOpen(open);
-              if (!open) resetForm();
-            }}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" /> Neuer Eintrag
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[500px]">
-                <DialogHeader>
-                  <DialogTitle>{editingEvent ? "Event bearbeiten" : "Neues Event erstellen"}</DialogTitle>
-                  <DialogDescription>
-                    {editingEvent ? "Bearbeiten Sie die Event-Details." : "Fügen Sie ein neues Marketing-Event hinzu."}
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="title">Titel</Label>
-                    <Input
-                      id="title"
-                      value={formData.title}
-                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                      placeholder="z.B. Blog: USV für Homeoffice"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="date">Datum</Label>
-                      <Input
-                        id="date"
-                        type="date"
-                        value={formData.date}
-                        onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>Typ</Label>
-                      <Select
-                        value={formData.type}
-                        onValueChange={(value: any) => setFormData({ ...formData, type: value })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="SEO">SEO / Blog</SelectItem>
-                          <SelectItem value="SEA">SEA / Ads</SelectItem>
-                          <SelectItem value="Social">Social Media</SelectItem>
-                          <SelectItem value="Newsletter">Newsletter</SelectItem>
-                          <SelectItem value="PR">PR / Presse</SelectItem>
-                          <SelectItem value="Product">Produkt</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>Status</Label>
-                    <Select
-                      value={formData.status}
-                      onValueChange={(value: any) => setFormData({ ...formData, status: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Planned">Geplant</SelectItem>
-                        <SelectItem value="Draft">Entwurf</SelectItem>
-                        <SelectItem value="Review">In Review</SelectItem>
-                        <SelectItem value="Dev">In Entwicklung</SelectItem>
-                        <SelectItem value="Published">Veröffentlicht</SelectItem>
-                        <SelectItem value="Active">Aktiv</SelectItem>
-                        <SelectItem value="Done">Erledigt</SelectItem>
-                        <SelectItem value="Sent">Gesendet</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="description">Beschreibung (optional)</Label>
-                    <Textarea
-                      id="description"
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      placeholder="Kurze Beschreibung des Events..."
-                      rows={3}
-                    />
-                  </div>
-                </div>
-                <DialogFooter className="flex justify-between">
-                  {editingEvent && (
-                    <Button
-                      variant="destructive"
-                      onClick={() => {
-                        handleDelete(editingEvent._id);
-                        setIsDialogOpen(false);
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" /> Löschen
-                    </Button>
-                  )}
-                  <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Abbrechen</Button>
-                    <Button onClick={handleSubmit}>{editingEvent ? "Speichern" : "Erstellen"}</Button>
-                  </div>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
           </div>
         </div>
 
-        <div className="grid grid-cols-4 gap-4">
-          <Card className="col-span-3">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle>Kalenderansicht</CardTitle>
-              <div className="flex items-center gap-2">
-                <Select value={selectedType} onValueChange={setSelectedType}>
-                  <SelectTrigger className="w-[130px] h-8 text-xs">
-                    <SelectValue placeholder="Alle Typen" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Alle Typen</SelectItem>
-                    <SelectItem value="SEO">SEO</SelectItem>
-                    <SelectItem value="SEA">SEA</SelectItem>
-                    <SelectItem value="Social">Social</SelectItem>
-                    <SelectItem value="Newsletter">Newsletter</SelectItem>
-                    <SelectItem value="PR">PR</SelectItem>
-                    <SelectItem value="Product">Product</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                  <SelectTrigger className="w-[130px] h-8 text-xs">
-                    <SelectValue placeholder="Alle Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Alle Status</SelectItem>
-                    <SelectItem value="Planned">Geplant</SelectItem>
-                    <SelectItem value="Draft">Entwurf</SelectItem>
-                    <SelectItem value="Review">Review</SelectItem>
-                    <SelectItem value="Published">Veröffentlicht</SelectItem>
-                    <SelectItem value="Active">Aktiv</SelectItem>
-                  </SelectContent>
-                </Select>
+        {/* Stats Cards */}
+        <div className="grid gap-4 md:grid-cols-5">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Gesamt</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats?.total || 0}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-emerald-500">Veröffentlicht</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-emerald-500">{stats?.published || 0}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-blue-500">In Arbeit</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-500">{stats?.inProgress || 0}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-slate-400">Geplant</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-slate-400">{stats?.planned || 0}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Dieser Monat</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{filteredContent.length}</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Main Content */}
+        <div className="grid gap-6 lg:grid-cols-4">
+          {/* Calendar */}
+          <Card className="lg:col-span-3">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="icon" onClick={() => navigateYear(-1)}>
+                    <ChevronLeft className="h-4 w-4" />
+                    <ChevronLeft className="h-4 w-4 -ml-2" />
+                  </Button>
+                  <Button variant="outline" size="icon" onClick={() => navigateMonth(-1)}>
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                </div>
+                <CardTitle className="text-xl">
+                  {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
+                </CardTitle>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="icon" onClick={() => navigateMonth(1)}>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  <Button variant="outline" size="icon" onClick={() => navigateYear(1)}>
+                    <ChevronRight className="h-4 w-4" />
+                    <ChevronRight className="h-4 w-4 -ml-2" />
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-7 gap-px mb-px text-center text-sm font-medium text-muted-foreground py-2">
-                <div>Mo</div><div>Di</div><div>Mi</div><div>Do</div><div>Fr</div><div>Sa</div><div>So</div>
-              </div>
-              <div className="grid grid-cols-7 gap-px bg-border/50 border border-border rounded-md overflow-hidden">
-                {renderCalendarDays()}
-              </div>
+              {renderCalendar()}
             </CardContent>
           </Card>
 
-          <div className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">Legende</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-xs font-medium text-muted-foreground">Kanäle</label>
-                  <div className="flex flex-wrap gap-2">
-                    {Object.entries(eventTypeStyles).map(([type, style]) => (
-                      <Badge
-                        key={type}
-                        variant="outline"
-                        className={cn("cursor-pointer hover:bg-muted text-xs", style)}
-                      >
-                        {type}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-medium text-muted-foreground">Statistik</label>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    {eventStats?.map(stat => (
-                      <div key={stat.type} className="flex justify-between">
-                        <span className="text-muted-foreground">{stat.type}</span>
-                        <span className="font-medium">{stat.count}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">Nächste Events</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="h-[200px] pr-4">
-                  <div className="space-y-3">
-                    {upcomingEvents?.slice(0, 5).map((event) => (
-                      <div
-                        key={event._id}
-                        className="flex items-center justify-between p-2 border border-border rounded-md bg-muted/10 cursor-pointer hover:bg-muted/30"
-                        onClick={() => handleEditEvent(event)}
-                      >
-                        <div>
-                          <div className="font-medium text-sm truncate max-w-[150px]">{event.title}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {new Date(event.date).toLocaleDateString('de-DE', { day: '2-digit', month: 'short' })}
-                          </div>
+          {/* Sidebar - Selected Date Details */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CalendarIcon className="h-5 w-5" />
+                {selectedDate ? new Date(selectedDate).toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' }) : 'Tag auswählen'}
+              </CardTitle>
+              <CardDescription>
+                {selectedDateContent.length} Content-Pieces
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {selectedDate && (
+                <Button
+                  variant="outline"
+                  className="w-full mb-4"
+                  onClick={() => openCreateDialog(selectedDate)}
+                >
+                  <Plus className="h-4 w-4 mr-2" /> Content für diesen Tag
+                </Button>
+              )}
+              <ScrollArea className="h-[500px]">
+                <div className="space-y-3">
+                  {selectedDateContent.map((piece: any) => (
+                    <div
+                      key={piece._id}
+                      className="p-3 border rounded-lg space-y-2 hover:bg-muted/30 transition-colors"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <h4 className="font-medium text-sm leading-tight">{piece.title}</h4>
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditDialog(piece)}>
+                            <Edit className="h-3 w-3" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(piece._id)}>
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
                         </div>
-                        <Badge variant="outline" className={cn("text-[10px]", eventTypeStyles[event.type])}>
-                          {event.type}
-                        </Badge>
                       </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">Meilensteine</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="h-[150px] pr-4">
-                  <div className="space-y-3">
-                    {milestones.map((milestone, i) => (
-                      <div key={i} className="flex items-center justify-between p-2 border border-border rounded-md bg-muted/10">
-                        <div>
-                          <div className="font-medium text-sm">{milestone.title}</div>
-                          <div className="text-xs text-muted-foreground">{milestone.date}</div>
-                        </div>
-                        <Badge variant="secondary" className="text-xs">
-                          in {milestone.days} Tagen
+                      <div className="flex flex-wrap gap-1">
+                        <Badge variant="outline" className={channelStyles[piece.channel]}>
+                          {piece.channel}
                         </Badge>
+                        <Badge variant="outline" className={statusStyles[piece.status]}>
+                          {piece.status}
+                        </Badge>
+                        <Badge variant="outline">{piece.contentType}</Badge>
                       </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </CardContent>
-            </Card>
-          </div>
+                      <p className="text-xs text-muted-foreground">{piece.journeyPhase}</p>
+                    </div>
+                  ))}
+                  {selectedDateContent.length === 0 && selectedDate && (
+                    <p className="text-sm text-muted-foreground text-center py-8">
+                      Keine Content-Pieces für diesen Tag
+                    </p>
+                  )}
+                  {!selectedDate && (
+                    <p className="text-sm text-muted-foreground text-center py-8">
+                      Wähle einen Tag im Kalender aus
+                    </p>
+                  )}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
         </div>
       </div>
+
+      {/* Create/Edit Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{editingPiece ? "Content bearbeiten" : "Neuer Content"}</DialogTitle>
+            <DialogDescription>
+              {editingPiece ? "Bearbeite das Content-Piece" : "Erstelle ein neues Content-Piece für den Kalender"}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="title">Titel</Label>
+              <Input
+                id="title"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                placeholder="Content-Titel eingeben..."
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="publishDate">Veröffentlichungsdatum</Label>
+                <Input
+                  id="publishDate"
+                  type="date"
+                  value={formData.publishDate}
+                  onChange={(e) => setFormData({ ...formData, publishDate: e.target.value })}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="status">Status</Label>
+                <Select value={formData.status} onValueChange={(v: any) => setFormData({ ...formData, status: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {statuses.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="channel">Kanal</Label>
+                <Select value={formData.channel} onValueChange={(v: any) => setFormData({ ...formData, channel: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {channels.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="contentType">Content-Typ</Label>
+                <Select value={formData.contentType} onValueChange={(v: any) => setFormData({ ...formData, contentType: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {contentTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="journeyPhase">Customer Journey Phase</Label>
+                <Select value={formData.journeyPhase} onValueChange={(v: any) => setFormData({ ...formData, journeyPhase: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {journeyPhases.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="assignee">Zugewiesen an</Label>
+                <Input
+                  id="assignee"
+                  value={formData.assignee}
+                  onChange={(e) => setFormData({ ...formData, assignee: e.target.value })}
+                  placeholder="Name..."
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="description">Beschreibung</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Kurze Beschreibung..."
+                rows={3}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Abbrechen</Button>
+            <Button onClick={handleSubmit} disabled={!formData.title || !formData.publishDate}>
+              {editingPiece ? "Speichern" : "Erstellen"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }

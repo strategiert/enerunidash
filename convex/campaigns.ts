@@ -1,11 +1,9 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 
-// Get all campaigns with optional filtering
+// Alle Kampagnen abrufen
 export const list = query({
-  args: {
-    status: v.optional(v.string()),
-  },
+  args: { status: v.optional(v.string()) },
   handler: async (ctx, args) => {
     let campaigns;
 
@@ -18,59 +16,87 @@ export const list = query({
       campaigns = await ctx.db.query("campaigns").collect();
     }
 
-    // Sort by start date
-    campaigns.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
-
+    campaigns.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
     return campaigns;
   },
 });
 
-// Get campaign statistics
+// Kampagnen mit verknüpften Content Pieces
+export const listWithContent = query({
+  args: {},
+  handler: async (ctx) => {
+    const campaigns = await ctx.db.query("campaigns").collect();
+    const contentPieces = await ctx.db.query("contentPieces").collect();
+
+    return campaigns.map(campaign => {
+      const linkedContent = contentPieces.filter(cp => cp.campaignId === campaign._id);
+      return {
+        ...campaign,
+        contentCount: linkedContent.length,
+        content: linkedContent,
+      };
+    }).sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
+  },
+});
+
+// Einzelne Kampagne abrufen
+export const get = query({
+  args: { id: v.id("campaigns") },
+  handler: async (ctx, args) => {
+    const campaign = await ctx.db.get(args.id);
+    if (!campaign) return null;
+
+    const contentPieces = await ctx.db
+      .query("contentPieces")
+      .withIndex("by_campaignId", (q) => q.eq("campaignId", args.id))
+      .collect();
+
+    return {
+      ...campaign,
+      contentCount: contentPieces.length,
+      content: contentPieces,
+    };
+  },
+});
+
+// Kampagnen-Statistiken
 export const getStats = query({
   args: {},
   handler: async (ctx) => {
     const campaigns = await ctx.db.query("campaigns").collect();
+    const contentPieces = await ctx.db.query("contentPieces").collect();
+
+    const totalBudget = campaigns.reduce((sum, c) => sum + c.budget, 0);
+    const totalSpent = campaigns.reduce((sum, c) => sum + c.spent, 0);
+    const totalConversions = campaigns.reduce((sum, c) => sum + c.conversions, 0);
 
     const activeCampaigns = campaigns.filter(c => c.status === "Active");
-    const totalBudget = activeCampaigns.reduce((sum, c) => sum + c.budget, 0);
-    const totalSpent = activeCampaigns.reduce((sum, c) => sum + c.spent, 0);
-    const totalConversions = activeCampaigns.reduce((sum, c) => sum + c.conversions, 0);
+    const avgRoas = activeCampaigns.length > 0
+      ? activeCampaigns.reduce((sum, c) => sum + c.roas, 0) / activeCampaigns.length
+      : 0;
 
-    // Calculate overall ROAS
-    const totalRevenue = activeCampaigns.reduce((sum, c) => sum + (c.spent * c.roas), 0);
-    const overallRoas = totalSpent > 0 ? totalRevenue / totalSpent : 0;
+    const linkedContentCount = contentPieces.filter(cp => cp.campaignId).length;
 
     return {
       totalCampaigns: campaigns.length,
       activeCampaigns: activeCampaigns.length,
       plannedCampaigns: campaigns.filter(c => c.status === "Planned").length,
+      endedCampaigns: campaigns.filter(c => c.status === "Ended").length,
       totalBudget,
       totalSpent,
-      totalConversions,
-      overallRoas: Math.round(overallRoas * 10) / 10,
       budgetUtilization: totalBudget > 0 ? Math.round((totalSpent / totalBudget) * 100) : 0,
+      totalConversions,
+      avgRoas: Math.round(avgRoas * 10) / 10,
+      linkedContentCount,
     };
   },
 });
 
-// Get a single campaign by ID
-export const get = query({
-  args: { id: v.id("campaigns") },
-  handler: async (ctx, args) => {
-    return await ctx.db.get(args.id);
-  },
-});
-
-// Add a new campaign
+// Kampagne hinzufügen
 export const add = mutation({
   args: {
     name: v.string(),
-    status: v.union(
-      v.literal("Planned"),
-      v.literal("Active"),
-      v.literal("Paused"),
-      v.literal("Ended")
-    ),
+    status: v.union(v.literal("Planned"), v.literal("Active"), v.literal("Paused"), v.literal("Ended")),
     channel: v.string(),
     budget: v.number(),
     spent: v.number(),
@@ -88,17 +114,12 @@ export const add = mutation({
   },
 });
 
-// Update campaign
+// Kampagne aktualisieren
 export const update = mutation({
   args: {
     id: v.id("campaigns"),
     name: v.optional(v.string()),
-    status: v.optional(v.union(
-      v.literal("Planned"),
-      v.literal("Active"),
-      v.literal("Paused"),
-      v.literal("Ended")
-    )),
+    status: v.optional(v.union(v.literal("Planned"), v.literal("Active"), v.literal("Paused"), v.literal("Ended"))),
     channel: v.optional(v.string()),
     budget: v.optional(v.number()),
     spent: v.optional(v.number()),
@@ -120,44 +141,20 @@ export const update = mutation({
   },
 });
 
-// Delete campaign
+// Kampagne löschen
 export const remove = mutation({
   args: { id: v.id("campaigns") },
   handler: async (ctx, args) => {
-    await ctx.db.delete(args.id);
-  },
-});
+    // Entferne auch die Verknüpfung von Content Pieces
+    const linkedContent = await ctx.db
+      .query("contentPieces")
+      .withIndex("by_campaignId", (q) => q.eq("campaignId", args.id))
+      .collect();
 
-// Bulk insert campaigns
-export const bulkInsert = mutation({
-  args: {
-    campaigns: v.array(v.object({
-      name: v.string(),
-      status: v.union(
-        v.literal("Planned"),
-        v.literal("Active"),
-        v.literal("Paused"),
-        v.literal("Ended")
-      ),
-      channel: v.string(),
-      budget: v.number(),
-      spent: v.number(),
-      roas: v.number(),
-      conversions: v.number(),
-      clicks: v.number(),
-      impressions: v.number(),
-      startDate: v.string(),
-      endDate: v.string(),
-      targetAudience: v.string(),
-      goals: v.array(v.string()),
-    })),
-  },
-  handler: async (ctx, args) => {
-    const ids = [];
-    for (const campaign of args.campaigns) {
-      const id = await ctx.db.insert("campaigns", campaign);
-      ids.push(id);
+    for (const piece of linkedContent) {
+      await ctx.db.patch(piece._id, { campaignId: undefined });
     }
-    return ids;
+
+    await ctx.db.delete(args.id);
   },
 });

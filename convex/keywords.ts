@@ -1,12 +1,11 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 
-// Get all keywords with optional filtering
+// Alle Keywords abrufen
 export const list = query({
   args: {
     cluster: v.optional(v.string()),
     journeyPhase: v.optional(v.string()),
-    hasContent: v.optional(v.boolean()),
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
@@ -20,23 +19,15 @@ export const list = query({
     } else if (args.journeyPhase) {
       keywords = await ctx.db
         .query("keywords")
-        .withIndex("by_journeyPhase", (q) =>
-          q.eq("journeyPhase", args.journeyPhase as any)
-        )
+        .withIndex("by_journeyPhase", (q) => q.eq("journeyPhase", args.journeyPhase as any))
         .collect();
     } else {
       keywords = await ctx.db.query("keywords").collect();
     }
 
-    // Filter by hasContent if specified
-    if (args.hasContent !== undefined) {
-      keywords = keywords.filter(k => k.hasContent === args.hasContent);
-    }
-
-    // Sort by priority score descending
+    // Sort by priority score
     keywords.sort((a, b) => b.priorityScore - a.priorityScore);
 
-    // Apply limit if specified
     if (args.limit) {
       keywords = keywords.slice(0, args.limit);
     }
@@ -45,74 +36,93 @@ export const list = query({
   },
 });
 
-// Search keywords
-export const search = query({
-  args: {
-    searchTerm: v.string(),
-    cluster: v.optional(v.string()),
-    journeyPhase: v.optional(v.string()),
+// Keywords mit Content-Count (wie viele Content Pieces targeten dieses Keyword)
+export const listWithContentCount = query({
+  args: {},
+  handler: async (ctx) => {
+    const keywords = await ctx.db.query("keywords").collect();
+    const contentPieces = await ctx.db.query("contentPieces").collect();
+
+    return keywords.map(kw => {
+      const contentCount = contentPieces.filter(cp =>
+        cp.primaryKeyword === kw._id ||
+        (cp.targetKeywords && cp.targetKeywords.includes(kw._id))
+      ).length;
+
+      return {
+        ...kw,
+        contentCount,
+        hasContent: contentCount > 0,
+      };
+    }).sort((a, b) => b.priorityScore - a.priorityScore);
   },
+});
+
+// Keyword-Suche
+export const search = query({
+  args: { searchTerm: v.string() },
   handler: async (ctx, args) => {
     if (!args.searchTerm || args.searchTerm.length < 2) {
       return [];
     }
 
-    const results = await ctx.db
+    return await ctx.db
       .query("keywords")
-      .withSearchIndex("search_keyword", (q) => {
-        let search = q.search("keyword", args.searchTerm);
-        if (args.cluster) {
-          search = search.eq("cluster", args.cluster);
-        }
-        if (args.journeyPhase) {
-          search = search.eq("journeyPhase", args.journeyPhase as any);
-        }
-        return search;
-      })
+      .withSearchIndex("search_keyword", (q) => q.search("keyword", args.searchTerm))
       .take(50);
-
-    return results;
   },
 });
 
-// Get keyword clusters with counts
+// Cluster-Übersicht
 export const getClusters = query({
   args: {},
   handler: async (ctx) => {
     const keywords = await ctx.db.query("keywords").collect();
+    const contentPieces = await ctx.db.query("contentPieces").collect();
 
-    const clusterCounts = keywords.reduce((acc, kw) => {
-      acc[kw.cluster] = (acc[kw.cluster] || 0) + 1;
+    const clusterMap = keywords.reduce((acc, kw) => {
+      if (!acc[kw.cluster]) {
+        acc[kw.cluster] = { name: kw.cluster, count: 0, totalVolume: 0, avgDifficulty: 0, contentCount: 0 };
+      }
+      acc[kw.cluster].count++;
+      acc[kw.cluster].totalVolume += kw.volume;
+      acc[kw.cluster].avgDifficulty += kw.difficulty;
       return acc;
-    }, {} as Record<string, number>);
+    }, {} as Record<string, { name: string; count: number; totalVolume: number; avgDifficulty: number; contentCount: number }>);
 
-    return Object.entries(clusterCounts).map(([name, count]) => ({
-      name,
-      count,
+    // Content-Count pro Cluster
+    for (const piece of contentPieces) {
+      if (piece.primaryKeyword) {
+        const kw = keywords.find(k => k._id === piece.primaryKeyword);
+        if (kw && clusterMap[kw.cluster]) {
+          clusterMap[kw.cluster].contentCount++;
+        }
+      }
+    }
+
+    return Object.values(clusterMap).map(cluster => ({
+      ...cluster,
+      avgDifficulty: Math.round(cluster.avgDifficulty / cluster.count),
     }));
   },
 });
 
-// Get journey phase distribution
+// Journey-Phase Verteilung
 export const getJourneyDistribution = query({
   args: {},
   handler: async (ctx) => {
     const keywords = await ctx.db.query("keywords").collect();
 
-    const phaseCounts = keywords.reduce((acc, kw) => {
-      acc[kw.journeyPhase] = (acc[kw.journeyPhase] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
     const phases = ["Awareness", "Consideration", "Decision", "Action", "Retention"];
     return phases.map(phase => ({
       phase,
-      count: phaseCounts[phase] || 0,
+      count: keywords.filter(kw => kw.journeyPhase === phase).length,
+      totalVolume: keywords.filter(kw => kw.journeyPhase === phase).reduce((sum, kw) => sum + kw.volume, 0),
     }));
   },
 });
 
-// Add a new keyword
+// Keyword hinzufügen
 export const add = mutation({
   args: {
     keyword: v.string(),
@@ -127,8 +137,6 @@ export const add = mutation({
     volume: v.number(),
     difficulty: v.number(),
     priorityScore: v.number(),
-    hasContent: v.boolean(),
-    contentType: v.optional(v.string()),
     notes: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
@@ -136,7 +144,7 @@ export const add = mutation({
   },
 });
 
-// Update keyword
+// Keyword aktualisieren
 export const update = mutation({
   args: {
     id: v.id("keywords"),
@@ -152,8 +160,6 @@ export const update = mutation({
     volume: v.optional(v.number()),
     difficulty: v.optional(v.number()),
     priorityScore: v.optional(v.number()),
-    hasContent: v.optional(v.boolean()),
-    contentType: v.optional(v.string()),
     notes: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
@@ -165,40 +171,10 @@ export const update = mutation({
   },
 });
 
-// Delete keyword
+// Keyword löschen
 export const remove = mutation({
   args: { id: v.id("keywords") },
   handler: async (ctx, args) => {
     await ctx.db.delete(args.id);
-  },
-});
-
-// Bulk insert keywords (for initial data seeding)
-export const bulkInsert = mutation({
-  args: {
-    keywords: v.array(v.object({
-      keyword: v.string(),
-      cluster: v.string(),
-      journeyPhase: v.union(
-        v.literal("Awareness"),
-        v.literal("Consideration"),
-        v.literal("Decision"),
-        v.literal("Action"),
-        v.literal("Retention")
-      ),
-      volume: v.number(),
-      difficulty: v.number(),
-      priorityScore: v.number(),
-      hasContent: v.boolean(),
-      contentType: v.optional(v.string()),
-    })),
-  },
-  handler: async (ctx, args) => {
-    const ids = [];
-    for (const keyword of args.keywords) {
-      const id = await ctx.db.insert("keywords", keyword);
-      ids.push(id);
-    }
-    return ids;
   },
 });

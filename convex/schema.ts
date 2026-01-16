@@ -2,7 +2,98 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export default defineSchema({
-  // Keywords für SEO/Content-Planung
+  // ============ EINHEITLICHES CONTENT-MODELL ============
+  // Dies ist DIE zentrale Tabelle für alle Content-Pieces
+  // Änderungen hier werden überall sichtbar (Kalender, Content, Keywords, etc.)
+
+  contentPieces: defineTable({
+    // Basis-Informationen
+    title: v.string(),
+    description: v.optional(v.string()),
+
+    // Zeitplanung (für Kalender)
+    publishDate: v.string(), // ISO date string YYYY-MM-DD
+
+    // Content-Typ & Kanal
+    contentType: v.union(
+      v.literal("Blog"),
+      v.literal("Video"),
+      v.literal("Tool"),
+      v.literal("Infographic"),
+      v.literal("Pillar Page"),
+      v.literal("Case Study"),
+      v.literal("Social Post"),
+      v.literal("Newsletter"),
+      v.literal("PR"),
+      v.literal("SEA Ad")
+    ),
+    channel: v.union(
+      v.literal("SEO"),
+      v.literal("SEA"),
+      v.literal("Social"),
+      v.literal("Email"),
+      v.literal("PR"),
+      v.literal("Product")
+    ),
+
+    // Status-Tracking
+    status: v.union(
+      v.literal("Idea"),
+      v.literal("Planned"),
+      v.literal("Draft"),
+      v.literal("In Progress"),
+      v.literal("Review"),
+      v.literal("Scheduled"),
+      v.literal("Published"),
+      v.literal("Active"),
+      v.literal("Paused"),
+      v.literal("Ended")
+    ),
+
+    // Content-Strategie
+    pillarId: v.optional(v.id("contentPillars")),
+    journeyPhase: v.union(
+      v.literal("Awareness"),
+      v.literal("Consideration"),
+      v.literal("Decision"),
+      v.literal("Action"),
+      v.literal("Retention")
+    ),
+
+    // Keyword-Verknüpfung (Array von Keyword-IDs)
+    targetKeywords: v.optional(v.array(v.id("keywords"))),
+    primaryKeyword: v.optional(v.id("keywords")),
+
+    // Kampagnen-Verknüpfung
+    campaignId: v.optional(v.id("campaigns")),
+
+    // Team & Workflow
+    assignee: v.optional(v.string()),
+    author: v.optional(v.string()),
+
+    // Performance (nach Veröffentlichung)
+    views: v.optional(v.number()),
+    conversions: v.optional(v.number()),
+
+    // Meta
+    createdAt: v.optional(v.string()),
+    updatedAt: v.optional(v.string()),
+    notes: v.optional(v.string()),
+  })
+    .index("by_publishDate", ["publishDate"])
+    .index("by_status", ["status"])
+    .index("by_channel", ["channel"])
+    .index("by_contentType", ["contentType"])
+    .index("by_pillarId", ["pillarId"])
+    .index("by_journeyPhase", ["journeyPhase"])
+    .index("by_campaignId", ["campaignId"])
+    .index("by_primaryKeyword", ["primaryKeyword"])
+    .searchIndex("search_content", {
+      searchField: "title",
+      filterFields: ["status", "channel", "contentType", "journeyPhase"],
+    }),
+
+  // ============ KEYWORDS ============
   keywords: defineTable({
     keyword: v.string(),
     cluster: v.string(),
@@ -16,8 +107,7 @@ export default defineSchema({
     volume: v.number(),
     difficulty: v.number(),
     priorityScore: v.number(),
-    hasContent: v.boolean(),
-    contentType: v.optional(v.string()),
+    // hasContent wird automatisch berechnet basierend auf contentPieces
     notes: v.optional(v.string()),
   })
     .index("by_cluster", ["cluster"])
@@ -28,75 +118,17 @@ export default defineSchema({
       filterFields: ["cluster", "journeyPhase"],
     }),
 
-  // Kalender-Events für Jahresplanung
-  calendarEvents: defineTable({
-    title: v.string(),
-    date: v.string(), // ISO date string
-    type: v.union(
-      v.literal("SEO"),
-      v.literal("SEA"),
-      v.literal("Social"),
-      v.literal("Newsletter"),
-      v.literal("PR"),
-      v.literal("Product")
-    ),
-    status: v.union(
-      v.literal("Planned"),
-      v.literal("Draft"),
-      v.literal("Review"),
-      v.literal("Published"),
-      v.literal("Active"),
-      v.literal("Done"),
-      v.literal("Sent"),
-      v.literal("Dev")
-    ),
-    description: v.optional(v.string()),
-    relatedKeywords: v.optional(v.array(v.string())),
-    assignee: v.optional(v.string()),
-  })
-    .index("by_date", ["date"])
-    .index("by_type", ["type"])
-    .index("by_status", ["status"]),
-
-  // Content-Items für die Content-Strategie
-  contentItems: defineTable({
-    title: v.string(),
-    pillarId: v.number(),
-    type: v.union(
-      v.literal("Blog"),
-      v.literal("Video"),
-      v.literal("Tool"),
-      v.literal("Infographic"),
-      v.literal("Pillar Page"),
-      v.literal("Case Study")
-    ),
-    status: v.union(
-      v.literal("Planned"),
-      v.literal("Draft"),
-      v.literal("In Progress"),
-      v.literal("Review"),
-      v.literal("Published")
-    ),
-    dueDate: v.optional(v.string()),
-    assignee: v.optional(v.string()),
-    description: v.optional(v.string()),
-    relatedKeywords: v.optional(v.array(v.string())),
-  })
-    .index("by_pillarId", ["pillarId"])
-    .index("by_status", ["status"])
-    .index("by_type", ["type"]),
-
-  // Content Pillars (Strategische Säulen)
+  // ============ CONTENT PILLARS ============
   contentPillars: defineTable({
     title: v.string(),
     description: v.string(),
     color: v.string(),
     priority: v.union(v.literal("HOCH"), v.literal("MITTEL"), v.literal("NIEDRIG")),
-    targetKeywords: v.number(),
-    completedKeywords: v.number(),
+    // Ziel-Anzahl für Content Pieces
+    targetCount: v.number(),
   }),
 
-  // Marketing-Kampagnen
+  // ============ KAMPAGNEN ============
   campaigns: defineTable({
     name: v.string(),
     status: v.union(
@@ -120,7 +152,7 @@ export default defineSchema({
     .index("by_status", ["status"])
     .index("by_startDate", ["startDate"]),
 
-  // Monatliche KPIs
+  // ============ KPIs & ANALYTICS ============
   monthlyKPIs: defineTable({
     month: v.string(),
     year: v.number(),
@@ -134,20 +166,11 @@ export default defineSchema({
   })
     .index("by_year_month", ["year", "month"]),
 
-  // Kanal-Attribution
   channelAttribution: defineTable({
     name: v.string(),
     value: v.number(),
     percentage: v.number(),
     color: v.string(),
-    year: v.number(),
-  }),
-
-  // Infografiken-Plan
-  infographics: defineTable({
-    month: v.string(),
-    title: v.string(),
-    status: v.union(v.literal("Planned"), v.literal("In Progress"), v.literal("Published")),
     year: v.number(),
   }),
 });

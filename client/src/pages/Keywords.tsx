@@ -7,11 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "convex/_generated/api";
-import { ArrowUpDown, Download, Edit, Plus, Search, Trash2, Zap } from "lucide-react";
+import { ArrowUpDown, Download, Edit, Plus, Search, Trash2 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
@@ -37,8 +37,8 @@ export default function KeywordsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingKeyword, setEditingKeyword] = useState<any>(null);
 
-  // Convex Queries
-  const keywords = useQuery(api.keywords.list, {});
+  // Convex Queries - Mit Content-Count aus dem einheitlichen Modell
+  const keywordsWithContent = useQuery(api.keywords.listWithContentCount, {});
   const clusters = useQuery(api.keywords.getClusters, {});
   const journeyDistribution = useQuery(api.keywords.getJourneyDistribution, {});
 
@@ -47,23 +47,22 @@ export default function KeywordsPage() {
   const updateKeyword = useMutation(api.keywords.update);
   const removeKeyword = useMutation(api.keywords.remove);
 
-  // Form State
+  // Form State - Ohne hasContent (wird automatisch berechnet)
   const [formData, setFormData] = useState({
     keyword: "",
     cluster: "USV & Notstrom",
-    journeyPhase: "Awareness" as const,
+    journeyPhase: "Awareness" as "Awareness" | "Consideration" | "Decision" | "Action" | "Retention",
     volume: 0,
     difficulty: 30,
     priorityScore: 50,
-    hasContent: false,
-    contentType: "",
+    notes: "",
   });
 
   // Filtered and sorted keywords
   const filteredKeywords = useMemo(() => {
-    if (!keywords) return [];
+    if (!keywordsWithContent) return [];
 
-    let filtered = [...keywords];
+    let filtered = [...keywordsWithContent];
 
     // Search filter
     if (searchTerm) {
@@ -90,7 +89,7 @@ export default function KeywordsPage() {
     });
 
     return filtered;
-  }, [keywords, searchTerm, selectedCluster, selectedJourney, sortField, sortDirection]);
+  }, [keywordsWithContent, searchTerm, selectedCluster, selectedJourney, sortField, sortDirection]);
 
   // Chart data
   const clusterData = useMemo(() => {
@@ -118,13 +117,23 @@ export default function KeywordsPage() {
   };
 
   const handleSubmit = async () => {
+    const keywordData = {
+      keyword: formData.keyword,
+      cluster: formData.cluster,
+      journeyPhase: formData.journeyPhase,
+      volume: formData.volume,
+      difficulty: formData.difficulty,
+      priorityScore: formData.priorityScore,
+      notes: formData.notes || undefined,
+    };
+
     if (editingKeyword) {
       await updateKeyword({
         id: editingKeyword._id,
-        ...formData,
+        ...keywordData,
       });
     } else {
-      await addKeyword(formData);
+      await addKeyword(keywordData);
     }
     setIsDialogOpen(false);
     resetForm();
@@ -139,8 +148,7 @@ export default function KeywordsPage() {
       volume: keyword.volume,
       difficulty: keyword.difficulty,
       priorityScore: keyword.priorityScore,
-      hasContent: keyword.hasContent,
-      contentType: keyword.contentType || "",
+      notes: keyword.notes || "",
     });
     setIsDialogOpen(true);
   };
@@ -160,8 +168,7 @@ export default function KeywordsPage() {
       volume: 0,
       difficulty: 30,
       priorityScore: 50,
-      hasContent: false,
-      contentType: "",
+      notes: "",
     });
   };
 
@@ -169,9 +176,9 @@ export default function KeywordsPage() {
     if (!filteredKeywords.length) return;
 
     const csv = [
-      ["Keyword", "Cluster", "Journey Phase", "Volume", "Difficulty", "Priority Score", "Has Content"].join(","),
+      ["Keyword", "Cluster", "Journey Phase", "Volume", "Difficulty", "Priority Score", "Content Count"].join(","),
       ...filteredKeywords.map(kw =>
-        [kw.keyword, kw.cluster, kw.journeyPhase, kw.volume, kw.difficulty, kw.priorityScore, kw.hasContent].join(",")
+        [kw.keyword, kw.cluster, kw.journeyPhase, kw.volume, kw.difficulty, kw.priorityScore, kw.contentCount].join(",")
       )
     ].join("\n");
 
@@ -184,9 +191,20 @@ export default function KeywordsPage() {
   };
 
   const uniqueClusters = useMemo(() => {
-    if (!keywords) return [];
-    return [...new Set(keywords.map(k => k.cluster))];
-  }, [keywords]);
+    if (!keywordsWithContent) return [];
+    return [...new Set(keywordsWithContent.map(k => k.cluster))];
+  }, [keywordsWithContent]);
+
+  // Stats
+  const stats = useMemo(() => {
+    if (!keywordsWithContent) return { total: 0, withContent: 0, withoutContent: 0 };
+    const withContent = keywordsWithContent.filter(k => k.hasContent).length;
+    return {
+      total: keywordsWithContent.length,
+      withContent,
+      withoutContent: keywordsWithContent.length - withContent,
+    };
+  }, [keywordsWithContent]);
 
   return (
     <DashboardLayout>
@@ -195,7 +213,7 @@ export default function KeywordsPage() {
           <div>
             <h2 className="text-3xl font-bold tracking-tight">Keyword Analyse</h2>
             <p className="text-muted-foreground mt-1">
-              {keywords?.length || 0} Keywords geclustert nach Themen und Customer Journey
+              {stats.total} Keywords ({stats.withContent} mit Content, {stats.withoutContent} ohne Content)
             </p>
           </div>
           <div className="flex gap-2">
@@ -215,7 +233,7 @@ export default function KeywordsPage() {
                 <DialogHeader>
                   <DialogTitle>{editingKeyword ? "Keyword bearbeiten" : "Neues Keyword hinzufügen"}</DialogTitle>
                   <DialogDescription>
-                    Fügen Sie ein neues Keyword zur Analyse hinzu.
+                    Fügen Sie ein neues Keyword zur Analyse hinzu. Der Content-Status wird automatisch berechnet.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
@@ -302,40 +320,33 @@ export default function KeywordsPage() {
                       />
                     </div>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        id="hasContent"
-                        checked={formData.hasContent}
-                        onChange={(e) => setFormData({ ...formData, hasContent: e.target.checked })}
-                        className="h-4 w-4"
-                      />
-                      <Label htmlFor="hasContent">Hat bereits Content</Label>
-                    </div>
-                    {formData.hasContent && (
-                      <div className="flex-1">
-                        <Select
-                          value={formData.contentType}
-                          onValueChange={(value) => setFormData({ ...formData, contentType: value })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Content-Typ" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Blog">Blog</SelectItem>
-                            <SelectItem value="Video">Video</SelectItem>
-                            <SelectItem value="Tool">Tool</SelectItem>
-                            <SelectItem value="Infographic">Infografik</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
+                  <div className="grid gap-2">
+                    <Label htmlFor="notes">Notizen (optional)</Label>
+                    <Textarea
+                      id="notes"
+                      value={formData.notes}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                      placeholder="Zusätzliche Informationen zum Keyword..."
+                      rows={2}
+                    />
                   </div>
                 </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Abbrechen</Button>
-                  <Button onClick={handleSubmit}>{editingKeyword ? "Speichern" : "Hinzufügen"}</Button>
+                <DialogFooter className="flex justify-between">
+                  {editingKeyword && (
+                    <Button
+                      variant="destructive"
+                      onClick={() => {
+                        handleDelete(editingKeyword._id);
+                        setIsDialogOpen(false);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" /> Löschen
+                    </Button>
+                  )}
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Abbrechen</Button>
+                    <Button onClick={handleSubmit}>{editingKeyword ? "Speichern" : "Hinzufügen"}</Button>
+                  </div>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
@@ -350,28 +361,34 @@ export default function KeywordsPage() {
             </CardHeader>
             <CardContent>
               <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={clusterData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={100}
-                      paddingAngle={2}
-                      dataKey="value"
-                    >
-                      {clusterData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} stroke="var(--background)" strokeWidth={2} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: 'var(--radius)' }}
-                      itemStyle={{ color: 'var(--foreground)' }}
-                    />
-                    <Legend verticalAlign="bottom" height={36} iconType="circle" />
-                  </PieChart>
-                </ResponsiveContainer>
+                {clusterData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={clusterData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={100}
+                        paddingAngle={2}
+                        dataKey="value"
+                      >
+                        {clusterData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} stroke="var(--background)" strokeWidth={2} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: 'var(--radius)' }}
+                        itemStyle={{ color: 'var(--foreground)' }}
+                      />
+                      <Legend verticalAlign="bottom" height={36} iconType="circle" />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-full flex items-center justify-center text-muted-foreground">
+                    Lade Cluster-Daten...
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -383,19 +400,25 @@ export default function KeywordsPage() {
             </CardHeader>
             <CardContent>
               <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={journeyData} layout="vertical" margin={{ left: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--border)" />
-                    <XAxis type="number" hide />
-                    <YAxis dataKey="phase" type="category" width={100} tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }} axisLine={false} tickLine={false} />
-                    <Tooltip
-                      cursor={{ fill: 'var(--muted)/20' }}
-                      contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: 'var(--radius)' }}
-                      itemStyle={{ color: 'var(--foreground)' }}
-                    />
-                    <Bar dataKey="count" fill="var(--primary)" radius={[0, 4, 4, 0]} barSize={32} />
-                  </BarChart>
-                </ResponsiveContainer>
+                {journeyData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={journeyData} layout="vertical" margin={{ left: 20 }}>
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--border)" />
+                      <XAxis type="number" hide />
+                      <YAxis dataKey="phase" type="category" width={100} tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }} axisLine={false} tickLine={false} />
+                      <Tooltip
+                        cursor={{ fill: 'var(--muted)/20' }}
+                        contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: 'var(--radius)' }}
+                        itemStyle={{ color: 'var(--foreground)' }}
+                      />
+                      <Bar dataKey="count" fill="var(--primary)" radius={[0, 4, 4, 0]} barSize={32} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-full flex items-center justify-center text-muted-foreground">
+                    Lade Journey-Daten...
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -406,7 +429,7 @@ export default function KeywordsPage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
                 <CardTitle>Keyword Liste</CardTitle>
-                <CardDescription>Priorisierte Keywords für Content-Erstellung</CardDescription>
+                <CardDescription>Priorisierte Keywords mit Verknüpfung zu Content-Pieces</CardDescription>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <div className="relative w-64">
@@ -482,7 +505,7 @@ export default function KeywordsPage() {
                 {filteredKeywords.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                      {keywords === undefined ? "Lade Keywords..." : "Keine Keywords gefunden"}
+                      {keywordsWithContent === undefined ? "Lade Keywords..." : "Keine Keywords gefunden"}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -512,7 +535,7 @@ export default function KeywordsPage() {
                       <TableCell>
                         {kw.hasContent ? (
                           <Badge variant="secondary" className="bg-emerald-500/20 text-emerald-500">
-                            {kw.contentType || "Ja"}
+                            {kw.contentCount} Stück
                           </Badge>
                         ) : (
                           <span className="text-muted-foreground text-sm">-</span>

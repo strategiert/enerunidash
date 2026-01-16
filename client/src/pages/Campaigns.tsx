@@ -9,9 +9,10 @@ import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "convex/_generated/api";
-import { ArrowUpRight, BarChart3, Calendar, DollarSign, Edit, Megaphone, MousePointerClick, Plus, Target, Trash2 } from "lucide-react";
+import { ArrowUpRight, BarChart3, Calendar, DollarSign, Edit, FileText, Megaphone, MousePointerClick, Plus, Target, Trash2 } from "lucide-react";
 import { useState, useMemo } from "react";
 
 export default function CampaignsPage() {
@@ -19,8 +20,8 @@ export default function CampaignsPage() {
   const [editingCampaign, setEditingCampaign] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("active");
 
-  // Convex Queries
-  const allCampaigns = useQuery(api.campaigns.list, {});
+  // Convex Queries - Mit verknüpften Content-Pieces
+  const campaignsWithContent = useQuery(api.campaigns.listWithContent, {});
   const campaignStats = useQuery(api.campaigns.getStats, {});
 
   // Convex Mutations
@@ -31,7 +32,7 @@ export default function CampaignsPage() {
   // Form State
   const [formData, setFormData] = useState({
     name: "",
-    status: "Planned" as const,
+    status: "Planned" as "Planned" | "Active" | "Paused" | "Ended",
     channel: "",
     budget: 5000,
     spent: 0,
@@ -47,17 +48,17 @@ export default function CampaignsPage() {
 
   // Filtered campaigns by status
   const filteredCampaigns = useMemo(() => {
-    if (!allCampaigns) return [];
+    if (!campaignsWithContent) return [];
 
     if (activeTab === "active") {
-      return allCampaigns.filter(c => c.status === "Active");
+      return campaignsWithContent.filter(c => c.status === "Active");
     } else if (activeTab === "planned") {
-      return allCampaigns.filter(c => c.status === "Planned");
+      return campaignsWithContent.filter(c => c.status === "Planned");
     } else if (activeTab === "ended") {
-      return allCampaigns.filter(c => c.status === "Ended" || c.status === "Paused");
+      return campaignsWithContent.filter(c => c.status === "Ended" || c.status === "Paused");
     }
-    return allCampaigns;
-  }, [allCampaigns, activeTab]);
+    return campaignsWithContent;
+  }, [campaignsWithContent, activeTab]);
 
   const handleEdit = (campaign: any) => {
     setEditingCampaign(campaign);
@@ -130,6 +131,7 @@ export default function CampaignsPage() {
             <h2 className="text-3xl font-bold tracking-tight">Kampagnen</h2>
             <p className="text-muted-foreground mt-1">
               Verwaltung und Performance aller Marketing-Kampagnen
+              {campaignStats && ` (${campaignStats.linkedContentCount} verknüpfte Content-Pieces)`}
             </p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={(open) => {
@@ -145,7 +147,7 @@ export default function CampaignsPage() {
               <DialogHeader>
                 <DialogTitle>{editingCampaign ? "Kampagne bearbeiten" : "Neue Kampagne erstellen"}</DialogTitle>
                 <DialogDescription>
-                  Erstellen oder bearbeiten Sie eine Marketing-Kampagne.
+                  Erstellen oder bearbeiten Sie eine Marketing-Kampagne. Content-Pieces können in der Content-Ansicht verknüpft werden.
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto">
@@ -287,7 +289,7 @@ export default function CampaignsPage() {
           </Dialog>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Aktives Budget</CardTitle>
@@ -309,7 +311,7 @@ export default function CampaignsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {campaignStats ? `${campaignStats.overallRoas}x` : "..."}
+                {campaignStats ? `${campaignStats.avgRoas}x` : "..."}
               </div>
               <p className="text-xs text-muted-foreground flex items-center mt-1">
                 <span className="text-emerald-500 flex items-center mr-1">
@@ -330,19 +332,37 @@ export default function CampaignsPage() {
               </p>
             </CardContent>
           </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Verknüpfter Content</CardTitle>
+              <FileText className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{campaignStats?.linkedContentCount || 0}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Content-Pieces mit Kampagne
+              </p>
+            </CardContent>
+          </Card>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList>
-            <TabsTrigger value="active">Aktiv</TabsTrigger>
-            <TabsTrigger value="planned">Geplant</TabsTrigger>
-            <TabsTrigger value="ended">Beendet</TabsTrigger>
+            <TabsTrigger value="active">
+              Aktiv ({campaignsWithContent?.filter(c => c.status === "Active").length || 0})
+            </TabsTrigger>
+            <TabsTrigger value="planned">
+              Geplant ({campaignsWithContent?.filter(c => c.status === "Planned").length || 0})
+            </TabsTrigger>
+            <TabsTrigger value="ended">
+              Beendet ({campaignsWithContent?.filter(c => c.status === "Ended" || c.status === "Paused").length || 0})
+            </TabsTrigger>
           </TabsList>
           <TabsContent value={activeTab} className="mt-4 space-y-4">
             {filteredCampaigns.length === 0 ? (
               <Card>
                 <CardContent className="py-8 text-center text-muted-foreground">
-                  {allCampaigns === undefined ? "Lade Kampagnen..." : "Keine Kampagnen in dieser Kategorie"}
+                  {campaignsWithContent === undefined ? "Lade Kampagnen..." : "Keine Kampagnen in dieser Kategorie"}
                 </CardContent>
               </Card>
             ) : (
@@ -357,6 +377,12 @@ export default function CampaignsPage() {
                           <span className="text-xs text-muted-foreground">
                             {new Date(campaign.startDate).toLocaleDateString('de-DE')} - {new Date(campaign.endDate).toLocaleDateString('de-DE')}
                           </span>
+                          {campaign.contentCount > 0 && (
+                            <Badge variant="outline" className="text-xs">
+                              <FileText className="h-3 w-3 mr-1" />
+                              {campaign.contentCount} Content
+                            </Badge>
+                          )}
                         </CardDescription>
                       </div>
                       <Badge
@@ -403,8 +429,26 @@ export default function CampaignsPage() {
                       </div>
                     </div>
                     {campaign.targetAudience && (
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-sm text-muted-foreground mb-3">
                         <span className="font-medium">Zielgruppe:</span> {campaign.targetAudience}
+                      </div>
+                    )}
+                    {/* Verknüpfte Content-Pieces */}
+                    {campaign.content && campaign.content.length > 0 && (
+                      <div className="border-t pt-3 mt-3">
+                        <div className="text-sm font-medium mb-2">Verknüpfte Content-Pieces:</div>
+                        <div className="flex flex-wrap gap-2">
+                          {campaign.content.slice(0, 5).map((piece: any) => (
+                            <Badge key={piece._id} variant="secondary" className="text-xs">
+                              {piece.title}
+                            </Badge>
+                          ))}
+                          {campaign.content.length > 5 && (
+                            <Badge variant="outline" className="text-xs">
+                              +{campaign.content.length - 5} weitere
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                     )}
                   </CardContent>

@@ -8,9 +8,8 @@
  * @module
  */
 
-import type * as calendarEvents from "../calendarEvents.js";
 import type * as campaigns from "../campaigns.js";
-import type * as content from "../content.js";
+import type * as contentPieces from "../contentPieces.js";
 import type * as keywords from "../keywords.js";
 import type * as kpis from "../kpis.js";
 import type * as seed from "../seed.js";
@@ -22,9 +21,8 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
-  calendarEvents: typeof calendarEvents;
   campaigns: typeof campaigns;
-  content: typeof content;
+  contentPieces: typeof contentPieces;
   keywords: typeof keywords;
   kpis: typeof kpis;
   seed: typeof seed;
