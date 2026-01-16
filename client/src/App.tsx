@@ -6,6 +6,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import CalendarPage from "./pages/Calendar";
 import CampaignsPage from "./pages/Campaigns";
+import ClusterDetailPage from "./pages/ClusterDetail";
 import ContentPage from "./pages/Content";
 import Dashboard from "./pages/Dashboard";
 import KeywordsPage from "./pages/Keywords";
@@ -18,6 +19,7 @@ function Router() {
       <Route path={"/"} component={Dashboard} />
       <Route path={"/calendar"} component={CalendarPage} />
       <Route path={"/keywords"} component={KeywordsPage} />
+      <Route path={"/cluster/:cluster"} component={ClusterDetailPage} />
       <Route path={"/content"} component={ContentPage} />
       <Route path={"/campaigns"} component={CampaignsPage} />
       <Route path={"/settings"} component={SettingsPage} />

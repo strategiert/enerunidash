@@ -34,7 +34,7 @@ export default function ContentPage() {
   // Form State
   const [formData, setFormData] = useState({
     title: "",
-    pillarId: "" as string,
+    pillarId: "none" as string,
     contentType: "Blog" as "Blog" | "Video" | "Tool" | "Infographic" | "Pillar Page" | "Case Study" | "Social Post" | "Newsletter" | "PR" | "SEA Ad",
     status: "Planned" as "Idea" | "Planned" | "Draft" | "In Progress" | "Review" | "Scheduled" | "Published" | "Active" | "Paused" | "Ended",
     channel: "SEO" as "SEO" | "SEA" | "Social" | "Email" | "PR" | "Product",
@@ -47,7 +47,7 @@ export default function ContentPage() {
     setEditingItem(item);
     setFormData({
       title: item.title,
-      pillarId: item.pillarId || "",
+      pillarId: item.pillarId || "none",
       contentType: item.contentType,
       status: item.status,
       channel: item.channel,
@@ -59,11 +59,12 @@ export default function ContentPage() {
   };
 
   const handleSubmit = async () => {
+    const pillarIdValue = formData.pillarId && formData.pillarId !== "none" ? (formData.pillarId as Id<"contentPillars">) : undefined;
     if (editingItem) {
       await updateContent({
         id: editingItem._id,
         title: formData.title,
-        pillarId: formData.pillarId ? (formData.pillarId as Id<"contentPillars">) : undefined,
+        pillarId: pillarIdValue,
         contentType: formData.contentType,
         status: formData.status,
         channel: formData.channel,
@@ -74,7 +75,7 @@ export default function ContentPage() {
     } else {
       await createContent({
         title: formData.title,
-        pillarId: formData.pillarId ? (formData.pillarId as Id<"contentPillars">) : undefined,
+        pillarId: pillarIdValue,
         contentType: formData.contentType,
         status: formData.status,
         channel: formData.channel,
@@ -97,7 +98,7 @@ export default function ContentPage() {
     setEditingItem(null);
     setFormData({
       title: "",
-      pillarId: "",
+      pillarId: "none",
       contentType: "Blog",
       status: "Planned",
       channel: "SEO",
@@ -194,7 +195,7 @@ export default function ContentPage() {
                           <SelectValue placeholder="Säule wählen" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Keine Säule</SelectItem>
+                          <SelectItem value="none">Keine Säule</SelectItem>
                           {pillarsWithContent?.map((pillar) => (
                             <SelectItem key={pillar._id} value={pillar._id}>
                               {pillar.title}

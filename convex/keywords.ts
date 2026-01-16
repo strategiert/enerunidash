@@ -178,3 +178,44 @@ export const remove = mutation({
     await ctx.db.delete(args.id);
   },
 });
+
+// Cluster-Detail: Keywords und Content Pieces eines Clusters
+export const getClusterDetail = query({
+  args: { cluster: v.string() },
+  handler: async (ctx, args) => {
+    const keywords = await ctx.db
+      .query("keywords")
+      .withIndex("by_cluster", (q) => q.eq("cluster", args.cluster))
+      .collect();
+
+    const contentPieces = await ctx.db.query("contentPieces").collect();
+    const keywordIds = new Set(keywords.map(k => k._id));
+
+    // Content Pieces die ein Keyword aus diesem Cluster als primaryKeyword haben
+    const clusterContent = contentPieces.filter(cp =>
+      cp.primaryKeyword && keywordIds.has(cp.primaryKeyword)
+    );
+
+    // Statistiken
+    const totalVolume = keywords.reduce((sum, k) => sum + k.volume, 0);
+    const avgDifficulty = keywords.length > 0
+      ? Math.round(keywords.reduce((sum, k) => sum + k.difficulty, 0) / keywords.length)
+      : 0;
+    const publishedContent = clusterContent.filter(c => c.status === "Published").length;
+
+    return {
+      cluster: args.cluster,
+      keywords: keywords.sort((a, b) => b.priorityScore - a.priorityScore),
+      contentPieces: clusterContent.sort((a, b) =>
+        new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime()
+      ),
+      stats: {
+        keywordCount: keywords.length,
+        contentCount: clusterContent.length,
+        publishedCount: publishedContent,
+        totalVolume,
+        avgDifficulty,
+      },
+    };
+  },
+});

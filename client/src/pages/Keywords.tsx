@@ -11,8 +11,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "convex/_generated/api";
-import { ArrowUpDown, Download, Edit, Plus, Search, Trash2 } from "lucide-react";
+import { ArrowUpDown, Download, Edit, ExternalLink, Plus, Search, Trash2 } from "lucide-react";
 import { useState, useMemo } from "react";
+import { Link } from "wouter";
 import { Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 const clusterColors: Record<string, string> = {
@@ -353,6 +354,28 @@ export default function KeywordsPage() {
           </div>
         </div>
 
+        {/* Cluster Cards */}
+        <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-5">
+          {clusters?.map((cluster) => (
+            <Link key={cluster.name} href={`/cluster/${encodeURIComponent(cluster.name)}`}>
+              <Card className="cursor-pointer hover:bg-muted/50 transition-colors">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium truncate">{cluster.name}</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-bold">{cluster.count}</span>
+                    <span className="text-xs text-muted-foreground">Keywords</span>
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {cluster.contentCount} Content | {cluster.totalVolume.toLocaleString()} Vol.
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          ))}
+        </div>
+
         <div className="grid gap-4 md:grid-cols-2">
           <Card>
             <CardHeader>
@@ -524,7 +547,12 @@ export default function KeywordsPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <span className="text-sm">{kw.cluster}</span>
+                        <Link href={`/cluster/${encodeURIComponent(kw.cluster)}`}>
+                          <span className="text-sm hover:text-primary hover:underline cursor-pointer flex items-center gap-1">
+                            {kw.cluster}
+                            <ExternalLink className="h-3 w-3 opacity-50" />
+                          </span>
+                        </Link>
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className="text-xs">
