@@ -183,6 +183,16 @@
     min-width: 0;
   }
 
+  /* Hide scrollbar but allow scroll */
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
   @media (min-width: 640px) {
     .container {
       padding-left: 1.5rem; /* 24px - tablet padding */

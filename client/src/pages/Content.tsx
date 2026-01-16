@@ -141,17 +141,17 @@ export default function ContentPage() {
   return (
     <DashboardLayout>
       <div className="space-y-8">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">Content Strategie</h2>
-            <p className="text-muted-foreground mt-1">
-              {contentStats?.total || 0} Content-Pieces in {pillarsWithContent?.length || 0} strategischen Säulen
-              ({contentStats?.published || 0} veröffentlicht, {contentStats?.inProgress || 0} in Arbeit)
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Content Strategie</h2>
+            <p className="text-muted-foreground mt-1 text-sm sm:text-base">
+              {contentStats?.total || 0} Content-Pieces in {pillarsWithContent?.length || 0} Säulen
+              <span className="hidden sm:inline"> ({contentStats?.published || 0} veröffentlicht, {contentStats?.inProgress || 0} in Arbeit)</span>
             </p>
           </div>
           <div className="flex gap-2">
             <Select value={String(selectedYear)} onValueChange={(v) => setSelectedYear(Number(v))}>
-              <SelectTrigger className="w-[120px]">
+              <SelectTrigger className="w-[100px] sm:w-[120px]">
                 <SelectValue placeholder="Jahr" />
               </SelectTrigger>
               <SelectContent>
@@ -169,14 +169,14 @@ export default function ContentPage() {
                   <FileText className="mr-2 h-4 w-4" /> Neues Content-Piece
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[600px]">
+              <DialogContent className="max-w-[95vw] sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>{editingItem ? "Content bearbeiten" : "Neues Content-Piece"}</DialogTitle>
                   <DialogDescription>
-                    Erstellen oder bearbeiten Sie ein Content-Piece. Änderungen werden überall sichtbar.
+                    Erstellen oder bearbeiten Sie ein Content-Piece.
                   </DialogDescription>
                 </DialogHeader>
-                <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto">
+                <div className="grid gap-4 py-4">
                   <div className="grid gap-2">
                     <Label htmlFor="title">Titel</Label>
                     <Input
@@ -186,7 +186,7 @@ export default function ContentPage() {
                       placeholder="z.B. Pillar Page: Solaranlage mit USV"
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="grid gap-2">
                       <Label>Content-Säule</Label>
                       <Select
@@ -230,7 +230,7 @@ export default function ContentPage() {
                       </Select>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="grid gap-2">
                       <Label>Kanal</Label>
                       <Select
@@ -271,9 +271,9 @@ export default function ContentPage() {
                       </Select>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="grid gap-2">
-                      <Label>Customer Journey Phase</Label>
+                      <Label>Journey Phase</Label>
                       <Select
                         value={formData.journeyPhase}
                         onValueChange={(value: any) => setFormData({ ...formData, journeyPhase: value })}
@@ -311,10 +311,11 @@ export default function ContentPage() {
                     />
                   </div>
                 </div>
-                <DialogFooter className="flex justify-between">
+                <DialogFooter className="flex-col sm:flex-row gap-2">
                   {editingItem && (
                     <Button
                       variant="destructive"
+                      className="w-full sm:w-auto"
                       onClick={() => {
                         handleDelete(editingItem._id);
                         setIsDialogOpen(false);
@@ -323,9 +324,9 @@ export default function ContentPage() {
                       <Trash2 className="h-4 w-4 mr-2" /> Löschen
                     </Button>
                   )}
-                  <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Abbrechen</Button>
-                    <Button onClick={handleSubmit}>{editingItem ? "Speichern" : "Erstellen"}</Button>
+                  <div className="flex gap-2 w-full sm:w-auto">
+                    <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="flex-1 sm:flex-none">Abbrechen</Button>
+                    <Button onClick={handleSubmit} className="flex-1 sm:flex-none">{editingItem ? "Speichern" : "Erstellen"}</Button>
                   </div>
                 </DialogFooter>
               </DialogContent>
@@ -334,24 +335,24 @@ export default function ContentPage() {
         </div>
 
         {/* Content Pillars */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           {pillarsWithContent?.map((pillar) => (
             <Card key={pillar._id} className="flex flex-col">
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
+              <CardHeader className="pb-2 p-4 sm:p-6">
+                <div className="flex items-start justify-between gap-2">
                   <Link href={`/pillar/${pillar._id}`}>
-                    <CardTitle className="text-lg hover:text-primary hover:underline cursor-pointer flex items-center gap-1">
+                    <CardTitle className="text-base sm:text-lg hover:text-primary hover:underline cursor-pointer flex items-center gap-1">
                       {pillar.title}
-                      <ExternalLink className="h-3 w-3 opacity-50" />
+                      <ExternalLink className="h-3 w-3 opacity-50 shrink-0" />
                     </CardTitle>
                   </Link>
-                  <Badge variant={pillar.priority === "HOCH" ? "default" : "secondary"} className="text-[10px]">
+                  <Badge variant={pillar.priority === "HOCH" ? "default" : "secondary"} className="text-[10px] shrink-0">
                     {pillar.priority}
                   </Badge>
                 </div>
-                <CardDescription>{pillar.description}</CardDescription>
+                <CardDescription className="text-xs sm:text-sm line-clamp-2">{pillar.description}</CardDescription>
               </CardHeader>
-              <CardContent className="flex-1 flex flex-col gap-4">
+              <CardContent className="flex-1 flex flex-col gap-4 p-4 sm:p-6 pt-0">
                 <div className="space-y-1">
                   <div className="flex justify-between text-xs text-muted-foreground">
                     <span>Fortschritt</span>
@@ -362,16 +363,17 @@ export default function ContentPage() {
                     {pillar.publishedCount} / {pillar.targetCount} veröffentlicht
                   </div>
                 </div>
-                <div className="space-y-2 mt-2 flex-1">
+                {/* Content items - collapsed on small mobile */}
+                <div className="space-y-2 mt-2 flex-1 hidden sm:block">
                   {pillar.pieces.slice(0, 4).map((item: any) => (
                     <div
                       key={item._id}
                       className="flex items-start gap-2 text-sm p-2 rounded-md bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer"
                       onClick={() => handleEdit(item)}
                     >
-                      {item.contentType === "Video" ? <Video className="h-4 w-4 mt-0.5 text-muted-foreground" /> :
-                        item.contentType === "Tool" ? <Clock className="h-4 w-4 mt-0.5 text-muted-foreground" /> :
-                          <BookOpen className="h-4 w-4 mt-0.5 text-muted-foreground" />}
+                      {item.contentType === "Video" ? <Video className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" /> :
+                        item.contentType === "Tool" ? <Clock className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" /> :
+                          <BookOpen className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />}
                       <div className="flex-1 min-w-0">
                         <div className="font-medium leading-tight truncate">{item.title}</div>
                         <div className="flex items-center gap-2 mt-1">
@@ -390,10 +392,14 @@ export default function ContentPage() {
                     </div>
                   )}
                 </div>
+                {/* Mobile: Show count instead of items */}
+                <div className="sm:hidden text-sm text-muted-foreground">
+                  {pillar.pieces.length} Content-Pieces
+                </div>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="w-full mt-auto"
+                  className="w-full mt-auto min-h-[44px]"
                   onClick={() => {
                     setFormData({ ...formData, pillarId: pillar._id });
                     setIsDialogOpen(true);
@@ -408,20 +414,20 @@ export default function ContentPage() {
 
         {/* Keyword Cluster */}
         <div className="space-y-4">
-          <h3 className="text-xl font-semibold">Keyword Cluster</h3>
-          <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-5">
+          <h3 className="text-lg sm:text-xl font-semibold">Keyword Cluster</h3>
+          <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
             {clusters?.map((cluster) => (
               <Link key={cluster.name} href={`/cluster/${encodeURIComponent(cluster.name)}`}>
-                <Card className="cursor-pointer hover:bg-muted/50 transition-colors">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium truncate">{cluster.name}</CardTitle>
+                <Card className="cursor-pointer hover:bg-muted/50 transition-colors h-full">
+                  <CardHeader className="pb-2 p-3 sm:p-4">
+                    <CardTitle className="text-xs sm:text-sm font-medium truncate">{cluster.name}</CardTitle>
                   </CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-2xl font-bold">{cluster.count}</span>
-                      <span className="text-xs text-muted-foreground">Keywords</span>
+                  <CardContent className="pt-0 p-3 sm:p-4 pt-0">
+                    <div className="flex items-baseline gap-1 sm:gap-2">
+                      <span className="text-xl sm:text-2xl font-bold">{cluster.count}</span>
+                      <span className="text-[10px] sm:text-xs text-muted-foreground">KW</span>
                     </div>
-                    <div className="text-xs text-muted-foreground mt-1">
+                    <div className="text-[10px] sm:text-xs text-muted-foreground mt-1">
                       {cluster.contentCount} Content | {cluster.totalVolume.toLocaleString()} Vol.
                     </div>
                   </CardContent>
@@ -433,44 +439,44 @@ export default function ContentPage() {
 
         {/* Jahresübersicht */}
         <div className="space-y-4">
-          <h3 className="text-xl font-semibold">Jahresübersicht {selectedYear}</h3>
+          <h3 className="text-lg sm:text-xl font-semibold">Jahresübersicht {selectedYear}</h3>
           <Tabs defaultValue="q1" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="q1">Q1: Start & Planung</TabsTrigger>
-              <TabsTrigger value="q2">Q2: Hochsaison Start</TabsTrigger>
-              <TabsTrigger value="q3">Q3: Hochsaison & Urlaub</TabsTrigger>
-              <TabsTrigger value="q4">Q4: Winter & Planung</TabsTrigger>
+            <TabsList className="w-full flex overflow-x-auto sm:grid sm:grid-cols-4 no-scrollbar">
+              <TabsTrigger value="q1" className="flex-1 min-w-fit text-xs sm:text-sm px-2 sm:px-4">Q1</TabsTrigger>
+              <TabsTrigger value="q2" className="flex-1 min-w-fit text-xs sm:text-sm px-2 sm:px-4">Q2</TabsTrigger>
+              <TabsTrigger value="q3" className="flex-1 min-w-fit text-xs sm:text-sm px-2 sm:px-4">Q3</TabsTrigger>
+              <TabsTrigger value="q4" className="flex-1 min-w-fit text-xs sm:text-sm px-2 sm:px-4">Q4</TabsTrigger>
             </TabsList>
             {quarterlyData.map((q, i) => (
               <TabsContent key={i} value={`q${i + 1}`} className="mt-4">
                 <Card>
-                  <CardHeader>
-                    <CardTitle>{q.quarter}</CardTitle>
-                    <CardDescription>Fokus: {q.focus}</CardDescription>
+                  <CardHeader className="p-4 sm:p-6">
+                    <CardTitle className="text-base sm:text-lg">{q.quarter}</CardTitle>
+                    <CardDescription className="text-xs sm:text-sm">Fokus: {q.focus}</CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <div className="grid md:grid-cols-3 gap-6">
+                  <CardContent className="p-4 sm:p-6 pt-0">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
                       {q.monthData.map((month) => (
-                        <div key={month.name} className="space-y-3 border rounded-lg p-4 bg-muted/10">
+                        <div key={month.name} className="space-y-2 sm:space-y-3 border rounded-lg p-3 sm:p-4 bg-muted/10">
                           <div className="flex items-center justify-between">
-                            <h4 className="font-bold text-lg">{month.name}</h4>
-                            <Badge variant="secondary">{month.total} Stück</Badge>
+                            <h4 className="font-bold text-base sm:text-lg">{month.name}</h4>
+                            <Badge variant="secondary" className="text-xs">{month.total} Stück</Badge>
                           </div>
-                          <div className="space-y-2">
-                            <div className="flex justify-between text-sm">
+                          <div className="space-y-1.5 sm:space-y-2">
+                            <div className="flex justify-between text-xs sm:text-sm">
                               <span className="text-muted-foreground">SEO</span>
                               <span className="font-medium">{month.seo}</span>
                             </div>
-                            <div className="flex justify-between text-sm">
+                            <div className="flex justify-between text-xs sm:text-sm">
                               <span className="text-muted-foreground">Social</span>
                               <span className="font-medium">{month.social}</span>
                             </div>
-                            <div className="flex justify-between text-sm">
+                            <div className="flex justify-between text-xs sm:text-sm">
                               <span className="text-muted-foreground">Email</span>
                               <span className="font-medium">{month.email}</span>
                             </div>
                             <div className="pt-2 border-t">
-                              <div className="flex justify-between text-sm">
+                              <div className="flex justify-between text-xs sm:text-sm">
                                 <span className="text-muted-foreground">Veröffentlicht</span>
                                 <span className="font-medium text-emerald-500">{month.published}</span>
                               </div>
@@ -489,16 +495,16 @@ export default function ContentPage() {
         {/* Status-Übersicht */}
         {contentStats && (
           <Card>
-            <CardHeader>
-              <CardTitle>Content nach Status ({selectedYear})</CardTitle>
-              <CardDescription>Verteilung aller Content-Pieces</CardDescription>
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="text-base sm:text-lg">Content nach Status ({selectedYear})</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">Verteilung aller Content-Pieces</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+            <CardContent className="p-4 sm:p-6 pt-0">
+              <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-2 sm:gap-4">
                 {Object.entries(contentStats.byStatus || {}).map(([status, count]) => (
-                  <div key={status} className="text-center p-4 rounded-lg bg-muted/30">
-                    <div className="text-2xl font-bold">{count as number}</div>
-                    <div className="text-xs text-muted-foreground">{status}</div>
+                  <div key={status} className="text-center p-2 sm:p-4 rounded-lg bg-muted/30">
+                    <div className="text-lg sm:text-2xl font-bold">{count as number}</div>
+                    <div className="text-[10px] sm:text-xs text-muted-foreground truncate">{status}</div>
                   </div>
                 ))}
               </div>

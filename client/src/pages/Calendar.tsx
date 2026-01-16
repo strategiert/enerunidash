@@ -166,8 +166,8 @@ export default function CalendarPage() {
   // Get content for selected date
   const selectedDateContent = selectedDate ? contentByDate[selectedDate] || [] : [];
 
-  // Render calendar
-  const renderCalendar = () => {
+  // Render calendar - Desktop version (full)
+  const renderCalendarDesktop = () => {
     const daysInMonth = getDaysInMonth(currentDate);
     const firstDay = getFirstDayOfMonth(currentDate);
     const days = [];
@@ -244,22 +244,98 @@ export default function CalendarPage() {
     return days;
   };
 
+  // Render calendar - Mobile version (compact with dots)
+  const renderCalendarMobile = () => {
+    const daysInMonth = getDaysInMonth(currentDate);
+    const firstDay = getFirstDayOfMonth(currentDate);
+    const weekDays = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+
+    const cells = [];
+    for (let i = 0; i < firstDay; i++) {
+      cells.push(<div key={`empty-${i}`} className="aspect-square" />);
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const dayContent = contentByDate[dateStr] || [];
+      const isSelected = selectedDate === dateStr;
+      const isToday = dateStr === new Date().toISOString().split('T')[0];
+
+      cells.push(
+        <div
+          key={day}
+          onClick={() => setSelectedDate(dateStr)}
+          className={cn(
+            "aspect-square flex flex-col items-center justify-center rounded-md cursor-pointer transition-colors min-h-[44px]",
+            isSelected && "ring-2 ring-primary bg-primary/10",
+            isToday && !isSelected && "bg-primary/5",
+            !isSelected && !isToday && "hover:bg-muted/50"
+          )}
+        >
+          <span className={cn(
+            "text-sm font-medium",
+            isToday && "text-primary",
+            isSelected && "font-bold"
+          )}>
+            {day}
+          </span>
+          {dayContent.length > 0 && (
+            <div className="flex gap-0.5 mt-0.5">
+              {dayContent.slice(0, 3).map((piece: any, i: number) => (
+                <div
+                  key={i}
+                  className={cn(
+                    "w-1.5 h-1.5 rounded-full",
+                    piece.channel === "SEO" && "bg-blue-500",
+                    piece.channel === "SEA" && "bg-purple-500",
+                    piece.channel === "Social" && "bg-pink-500",
+                    piece.channel === "Email" && "bg-amber-500",
+                    piece.channel === "PR" && "bg-emerald-500",
+                    piece.channel === "Product" && "bg-cyan-500"
+                  )}
+                />
+              ))}
+              {dayContent.length > 3 && (
+                <span className="text-[8px] text-muted-foreground">+</span>
+              )}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <>
+        <div className="grid grid-cols-7 mb-1">
+          {weekDays.map(day => (
+            <div key={day} className="text-center text-[10px] font-medium text-muted-foreground py-1">
+              {day}
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-7 gap-0.5">
+          {cells}
+        </div>
+      </>
+    );
+  };
+
   const monthNames = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">Content-Kalender</h2>
-            <p className="text-muted-foreground mt-1">
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Content-Kalender</h2>
+            <p className="text-muted-foreground mt-1 text-sm sm:text-base">
               {stats?.total || 0} Content-Pieces für {currentDate.getFullYear()} geplant
             </p>
           </div>
           <div className="flex items-center gap-2">
             <Select value={channelFilter} onValueChange={setChannelFilter}>
-              <SelectTrigger className="w-[150px]">
+              <SelectTrigger className="w-[130px] sm:w-[150px]">
                 <Filter className="h-4 w-4 mr-2" />
                 <SelectValue placeholder="Filter" />
               </SelectTrigger>
@@ -270,112 +346,121 @@ export default function CalendarPage() {
                 ))}
               </SelectContent>
             </Select>
-            <Button onClick={() => openCreateDialog()}>
-              <Plus className="h-4 w-4 mr-2" /> Neuer Content
+            <Button onClick={() => openCreateDialog()} size="sm" className="sm:size-default">
+              <Plus className="h-4 w-4 sm:mr-2" /> <span className="hidden sm:inline">Neuer Content</span>
             </Button>
           </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-5">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Gesamt</CardTitle>
+        <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-5">
+          <Card className="p-3 sm:p-4">
+            <CardHeader className="pb-1 sm:pb-2 p-0">
+              <CardTitle className="text-xs sm:text-sm font-medium">Gesamt</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats?.total || 0}</div>
+            <CardContent className="p-0 pt-1">
+              <div className="text-xl sm:text-2xl font-bold">{stats?.total || 0}</div>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-emerald-500">Veröffentlicht</CardTitle>
+          <Card className="p-3 sm:p-4">
+            <CardHeader className="pb-1 sm:pb-2 p-0">
+              <CardTitle className="text-xs sm:text-sm font-medium text-emerald-500">Veröffentlicht</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-emerald-500">{stats?.published || 0}</div>
+            <CardContent className="p-0 pt-1">
+              <div className="text-xl sm:text-2xl font-bold text-emerald-500">{stats?.published || 0}</div>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-blue-500">In Arbeit</CardTitle>
+          <Card className="p-3 sm:p-4">
+            <CardHeader className="pb-1 sm:pb-2 p-0">
+              <CardTitle className="text-xs sm:text-sm font-medium text-blue-500">In Arbeit</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-500">{stats?.inProgress || 0}</div>
+            <CardContent className="p-0 pt-1">
+              <div className="text-xl sm:text-2xl font-bold text-blue-500">{stats?.inProgress || 0}</div>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-slate-400">Geplant</CardTitle>
+          <Card className="p-3 sm:p-4">
+            <CardHeader className="pb-1 sm:pb-2 p-0">
+              <CardTitle className="text-xs sm:text-sm font-medium text-slate-400">Geplant</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-slate-400">{stats?.planned || 0}</div>
+            <CardContent className="p-0 pt-1">
+              <div className="text-xl sm:text-2xl font-bold text-slate-400">{stats?.planned || 0}</div>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Dieser Monat</CardTitle>
+          <Card className="p-3 sm:p-4 col-span-2 sm:col-span-1">
+            <CardHeader className="pb-1 sm:pb-2 p-0">
+              <CardTitle className="text-xs sm:text-sm font-medium">Dieser Monat</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{filteredContent.length}</div>
+            <CardContent className="p-0 pt-1">
+              <div className="text-xl sm:text-2xl font-bold">{filteredContent.length}</div>
             </CardContent>
           </Card>
         </div>
 
         {/* Main Content */}
-        <div className="grid gap-6 lg:grid-cols-4">
+        <div className="space-y-4 lg:space-y-0 lg:grid lg:gap-6 lg:grid-cols-4">
           {/* Calendar */}
           <Card className="lg:col-span-3">
-            <CardHeader className="pb-2">
+            <CardHeader className="pb-2 px-3 sm:px-6">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="icon" onClick={() => navigateYear(-1)}>
+                <div className="flex items-center gap-1 sm:gap-2">
+                  <Button variant="outline" size="icon" className="h-8 w-8 sm:h-9 sm:w-9 hidden sm:flex" onClick={() => navigateYear(-1)}>
                     <ChevronLeft className="h-4 w-4" />
                     <ChevronLeft className="h-4 w-4 -ml-2" />
                   </Button>
-                  <Button variant="outline" size="icon" onClick={() => navigateMonth(-1)}>
+                  <Button variant="outline" size="icon" className="h-8 w-8 sm:h-9 sm:w-9" onClick={() => navigateMonth(-1)}>
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
                 </div>
-                <CardTitle className="text-xl">
+                <CardTitle className="text-base sm:text-xl">
                   {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
                 </CardTitle>
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="icon" onClick={() => navigateMonth(1)}>
+                <div className="flex items-center gap-1 sm:gap-2">
+                  <Button variant="outline" size="icon" className="h-8 w-8 sm:h-9 sm:w-9" onClick={() => navigateMonth(1)}>
                     <ChevronRight className="h-4 w-4" />
                   </Button>
-                  <Button variant="outline" size="icon" onClick={() => navigateYear(1)}>
+                  <Button variant="outline" size="icon" className="h-8 w-8 sm:h-9 sm:w-9 hidden sm:flex" onClick={() => navigateYear(1)}>
                     <ChevronRight className="h-4 w-4" />
                     <ChevronRight className="h-4 w-4 -ml-2" />
                   </Button>
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
-              {renderCalendar()}
+            <CardContent className="px-2 sm:px-6">
+              {/* Desktop Calendar */}
+              <div className="hidden md:block">
+                {renderCalendarDesktop()}
+              </div>
+              {/* Mobile Calendar */}
+              <div className="md:hidden">
+                {renderCalendarMobile()}
+              </div>
             </CardContent>
           </Card>
 
-          {/* Sidebar - Selected Date Details */}
+          {/* Selected Date Details */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CalendarIcon className="h-5 w-5" />
-                {selectedDate ? new Date(selectedDate).toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' }) : 'Tag auswählen'}
+            <CardHeader className="p-3 sm:p-6">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <CalendarIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                <span className="truncate">
+                  {selectedDate ? new Date(selectedDate).toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'short' }) : 'Tag auswählen'}
+                </span>
               </CardTitle>
               <CardDescription>
                 {selectedDateContent.length} Content-Pieces
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-3 sm:p-6 pt-0">
               {selectedDate && (
                 <Button
                   variant="outline"
-                  className="w-full mb-4"
+                  className="w-full mb-4 min-h-[44px]"
                   onClick={() => openCreateDialog(selectedDate)}
                 >
                   <Plus className="h-4 w-4 mr-2" /> Content für diesen Tag
                 </Button>
               )}
-              <ScrollArea className="h-[500px]">
+              <ScrollArea className="h-[300px] lg:h-[500px]">
                 <div className="space-y-3">
                   {selectedDateContent.map((piece: any) => (
                     <div
@@ -384,23 +469,23 @@ export default function CalendarPage() {
                     >
                       <div className="flex items-start justify-between gap-2">
                         <h4 className="font-medium text-sm leading-tight">{piece.title}</h4>
-                        <div className="flex gap-1">
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditDialog(piece)}>
-                            <Edit className="h-3 w-3" />
+                        <div className="flex gap-1 shrink-0">
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditDialog(piece)}>
+                            <Edit className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(piece._id)}>
-                            <Trash2 className="h-3 w-3" />
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(piece._id)}>
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </div>
                       <div className="flex flex-wrap gap-1">
-                        <Badge variant="outline" className={channelStyles[piece.channel]}>
+                        <Badge variant="outline" className={cn("text-xs", channelStyles[piece.channel])}>
                           {piece.channel}
                         </Badge>
-                        <Badge variant="outline" className={statusStyles[piece.status]}>
+                        <Badge variant="outline" className={cn("text-xs", statusStyles[piece.status])}>
                           {piece.status}
                         </Badge>
-                        <Badge variant="outline">{piece.contentType}</Badge>
+                        <Badge variant="outline" className="text-xs">{piece.contentType}</Badge>
                       </div>
                       <p className="text-xs text-muted-foreground">{piece.journeyPhase}</p>
                     </div>
@@ -424,7 +509,7 @@ export default function CalendarPage() {
 
       {/* Create/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingPiece ? "Content bearbeiten" : "Neuer Content"}</DialogTitle>
             <DialogDescription>
@@ -443,7 +528,7 @@ export default function CalendarPage() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="publishDate">Veröffentlichungsdatum</Label>
                 <Input
@@ -464,7 +549,7 @@ export default function CalendarPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="channel">Kanal</Label>
                 <Select value={formData.channel} onValueChange={(v: any) => setFormData({ ...formData, channel: v })}>
@@ -485,7 +570,7 @@ export default function CalendarPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="journeyPhase">Customer Journey Phase</Label>
                 <Select value={formData.journeyPhase} onValueChange={(v: any) => setFormData({ ...formData, journeyPhase: v })}>
@@ -518,9 +603,9 @@ export default function CalendarPage() {
             </div>
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Abbrechen</Button>
-            <Button onClick={handleSubmit} disabled={!formData.title || !formData.publishDate}>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="w-full sm:w-auto">Abbrechen</Button>
+            <Button onClick={handleSubmit} disabled={!formData.title || !formData.publishDate} className="w-full sm:w-auto">
               {editingPiece ? "Speichern" : "Erstellen"}
             </Button>
           </DialogFooter>

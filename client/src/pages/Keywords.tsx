@@ -210,16 +210,16 @@ export default function KeywordsPage() {
   return (
     <DashboardLayout>
       <div className="space-y-8">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">Keyword Analyse</h2>
-            <p className="text-muted-foreground mt-1">
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Keyword Analyse</h2>
+            <p className="text-muted-foreground mt-1 text-sm sm:text-base">
               {stats.total} Keywords ({stats.withContent} mit Content, {stats.withoutContent} ohne Content)
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={handleExport}>
-              <Download className="mr-2 h-4 w-4" /> Export CSV
+            <Button variant="outline" onClick={handleExport} size="sm" className="sm:size-default">
+              <Download className="mr-2 h-4 w-4" /> <span className="hidden sm:inline">Export</span> CSV
             </Button>
             <Dialog open={isDialogOpen} onOpenChange={(open) => {
               setIsDialogOpen(open);
@@ -230,11 +230,11 @@ export default function KeywordsPage() {
                   <Plus className="mr-2 h-4 w-4" /> Neues Keyword
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[500px]">
+              <DialogContent className="max-w-[95vw] sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>{editingKeyword ? "Keyword bearbeiten" : "Neues Keyword hinzufügen"}</DialogTitle>
+                  <DialogTitle>{editingKeyword ? "Keyword bearbeiten" : "Neues Keyword"}</DialogTitle>
                   <DialogDescription>
-                    Fügen Sie ein neues Keyword zur Analyse hinzu. Der Content-Status wird automatisch berechnet.
+                    Keyword zur Analyse hinzufügen. Content-Status wird automatisch berechnet.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
@@ -247,7 +247,7 @@ export default function KeywordsPage() {
                       placeholder="z.B. Balkonkraftwerk bei Stromausfall"
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="grid gap-2">
                       <Label>Cluster</Label>
                       <Select
@@ -290,9 +290,9 @@ export default function KeywordsPage() {
                       </Select>
                     </div>
                   </div>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-3 gap-3 sm:gap-4">
                     <div className="grid gap-2">
-                      <Label htmlFor="volume">Suchvolumen</Label>
+                      <Label htmlFor="volume" className="text-xs sm:text-sm">Volumen</Label>
                       <Input
                         id="volume"
                         type="number"
@@ -301,7 +301,7 @@ export default function KeywordsPage() {
                       />
                     </div>
                     <div className="grid gap-2">
-                      <Label htmlFor="difficulty">Schwierigkeit</Label>
+                      <Label htmlFor="difficulty" className="text-xs sm:text-sm">Schwierigkeit</Label>
                       <Input
                         id="difficulty"
                         type="number"
@@ -312,7 +312,7 @@ export default function KeywordsPage() {
                       />
                     </div>
                     <div className="grid gap-2">
-                      <Label htmlFor="priorityScore">Priority Score</Label>
+                      <Label htmlFor="priorityScore" className="text-xs sm:text-sm">Priority</Label>
                       <Input
                         id="priorityScore"
                         type="number"
@@ -327,15 +327,16 @@ export default function KeywordsPage() {
                       id="notes"
                       value={formData.notes}
                       onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                      placeholder="Zusätzliche Informationen zum Keyword..."
+                      placeholder="Zusätzliche Informationen..."
                       rows={2}
                     />
                   </div>
                 </div>
-                <DialogFooter className="flex justify-between">
+                <DialogFooter className="flex-col sm:flex-row gap-2">
                   {editingKeyword && (
                     <Button
                       variant="destructive"
+                      className="w-full sm:w-auto"
                       onClick={() => {
                         handleDelete(editingKeyword._id);
                         setIsDialogOpen(false);
@@ -344,9 +345,9 @@ export default function KeywordsPage() {
                       <Trash2 className="h-4 w-4 mr-2" /> Löschen
                     </Button>
                   )}
-                  <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Abbrechen</Button>
-                    <Button onClick={handleSubmit}>{editingKeyword ? "Speichern" : "Hinzufügen"}</Button>
+                  <div className="flex gap-2 w-full sm:w-auto">
+                    <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="flex-1 sm:flex-none">Abbrechen</Button>
+                    <Button onClick={handleSubmit} className="flex-1 sm:flex-none">{editingKeyword ? "Speichern" : "Hinzufügen"}</Button>
                   </div>
                 </DialogFooter>
               </DialogContent>
@@ -355,19 +356,19 @@ export default function KeywordsPage() {
         </div>
 
         {/* Cluster Cards */}
-        <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-5">
+        <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
           {clusters?.map((cluster) => (
             <Link key={cluster.name} href={`/cluster/${encodeURIComponent(cluster.name)}`}>
-              <Card className="cursor-pointer hover:bg-muted/50 transition-colors">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium truncate">{cluster.name}</CardTitle>
+              <Card className="cursor-pointer hover:bg-muted/50 transition-colors h-full">
+                <CardHeader className="pb-2 p-3 sm:p-4">
+                  <CardTitle className="text-xs sm:text-sm font-medium truncate">{cluster.name}</CardTitle>
                 </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-bold">{cluster.count}</span>
-                    <span className="text-xs text-muted-foreground">Keywords</span>
+                <CardContent className="pt-0 p-3 sm:p-4 pt-0">
+                  <div className="flex items-baseline gap-1 sm:gap-2">
+                    <span className="text-xl sm:text-2xl font-bold">{cluster.count}</span>
+                    <span className="text-[10px] sm:text-xs text-muted-foreground">KW</span>
                   </div>
-                  <div className="text-xs text-muted-foreground mt-1">
+                  <div className="text-[10px] sm:text-xs text-muted-foreground mt-1">
                     {cluster.contentCount} Content | {cluster.totalVolume.toLocaleString()} Vol.
                   </div>
                 </CardContent>
@@ -449,13 +450,13 @@ export default function KeywordsPage() {
 
         <Card>
           <CardHeader>
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex flex-col gap-4">
               <div>
                 <CardTitle>Keyword Liste</CardTitle>
                 <CardDescription>Priorisierte Keywords mit Verknüpfung zu Content-Pieces</CardDescription>
               </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="relative w-64">
+              <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2">
+                <div className="relative flex-1 min-w-0 sm:max-w-64">
                   <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="Keywords suchen..."
@@ -464,136 +465,242 @@ export default function KeywordsPage() {
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
                 </div>
-                <Select value={selectedCluster} onValueChange={setSelectedCluster}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Alle Cluster" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Alle Cluster</SelectItem>
-                    {uniqueClusters.map(cluster => (
-                      <SelectItem key={cluster} value={cluster}>{cluster}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select value={selectedJourney} onValueChange={setSelectedJourney}>
-                  <SelectTrigger className="w-[150px]">
-                    <SelectValue placeholder="Alle Phasen" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Alle Phasen</SelectItem>
-                    <SelectItem value="Awareness">Awareness</SelectItem>
-                    <SelectItem value="Consideration">Consideration</SelectItem>
-                    <SelectItem value="Decision">Decision</SelectItem>
-                    <SelectItem value="Action">Action</SelectItem>
-                    <SelectItem value="Retention">Retention</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="flex gap-2">
+                  <Select value={selectedCluster} onValueChange={setSelectedCluster}>
+                    <SelectTrigger className="flex-1 sm:w-[150px]">
+                      <SelectValue placeholder="Cluster" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Alle Cluster</SelectItem>
+                      {uniqueClusters.map(cluster => (
+                        <SelectItem key={cluster} value={cluster}>{cluster}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={selectedJourney} onValueChange={setSelectedJourney}>
+                    <SelectTrigger className="flex-1 sm:w-[130px]">
+                      <SelectValue placeholder="Phase" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Alle Phasen</SelectItem>
+                      <SelectItem value="Awareness">Awareness</SelectItem>
+                      <SelectItem value="Consideration">Consideration</SelectItem>
+                      <SelectItem value="Decision">Decision</SelectItem>
+                      <SelectItem value="Action">Action</SelectItem>
+                      <SelectItem value="Retention">Retention</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              {/* Mobile sort buttons */}
+              <div className="flex gap-2 md:hidden">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => handleSort("priorityScore")}
+                >
+                  Priority <ArrowUpDown className="ml-1 h-3 w-3" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => handleSort("volume")}
+                >
+                  Volumen <ArrowUpDown className="ml-1 h-3 w-3" />
+                </Button>
               </div>
             </div>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[350px]">Keyword</TableHead>
-                  <TableHead>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="-ml-3 h-8"
-                      onClick={() => handleSort("priorityScore")}
-                    >
-                      Priority Score
-                      <ArrowUpDown className="ml-2 h-4 w-4" />
-                    </Button>
-                  </TableHead>
-                  <TableHead>Cluster</TableHead>
-                  <TableHead>Journey Phase</TableHead>
-                  <TableHead>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="-ml-3 h-8"
-                      onClick={() => handleSort("volume")}
-                    >
-                      Volumen
-                      <ArrowUpDown className="ml-2 h-4 w-4" />
-                    </Button>
-                  </TableHead>
-                  <TableHead>Content</TableHead>
-                  <TableHead className="w-[80px]">Aktionen</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredKeywords.length === 0 ? (
+            {/* Desktop Table View */}
+            <div className="hidden md:block">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                      {keywordsWithContent === undefined ? "Lade Keywords..." : "Keine Keywords gefunden"}
-                    </TableCell>
+                    <TableHead className="w-[350px]">Keyword</TableHead>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="-ml-3 h-8"
+                        onClick={() => handleSort("priorityScore")}
+                      >
+                        Priority Score
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                      </Button>
+                    </TableHead>
+                    <TableHead>Cluster</TableHead>
+                    <TableHead>Journey Phase</TableHead>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="-ml-3 h-8"
+                        onClick={() => handleSort("volume")}
+                      >
+                        Volumen
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                      </Button>
+                    </TableHead>
+                    <TableHead>Content</TableHead>
+                    <TableHead className="w-[80px]">Aktionen</TableHead>
                   </TableRow>
-                ) : (
-                  filteredKeywords.slice(0, 50).map((kw) => (
-                    <TableRow key={kw._id}>
-                      <TableCell className="font-medium">{kw.keyword}</TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={kw.priorityScore >= 90 ? "default" : kw.priorityScore >= 50 ? "secondary" : "outline"}
-                          className={cn(
-                            kw.priorityScore >= 90 ? "bg-emerald-500 hover:bg-emerald-600" :
-                              kw.priorityScore >= 50 ? "bg-blue-500/20 text-blue-500 hover:bg-blue-500/30" : ""
-                          )}
-                        >
-                          {kw.priorityScore}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Link href={`/cluster/${encodeURIComponent(kw.cluster)}`}>
-                          <span className="text-sm hover:text-primary hover:underline cursor-pointer flex items-center gap-1">
-                            {kw.cluster}
-                            <ExternalLink className="h-3 w-3 opacity-50" />
-                          </span>
-                        </Link>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="text-xs">
-                          {kw.journeyPhase}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">{kw.volume.toLocaleString()}</TableCell>
-                      <TableCell>
-                        {kw.hasContent ? (
-                          <Badge variant="secondary" className="bg-emerald-500/20 text-emerald-500">
-                            {kw.contentCount} Stück
-                          </Badge>
-                        ) : (
-                          <span className="text-muted-foreground text-sm">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => handleEdit(kw)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-destructive hover:text-destructive"
-                            onClick={() => handleDelete(kw._id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
+                </TableHeader>
+                <TableBody>
+                  {filteredKeywords.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                        {keywordsWithContent === undefined ? "Lade Keywords..." : "Keine Keywords gefunden"}
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+                  ) : (
+                    filteredKeywords.slice(0, 50).map((kw) => (
+                      <TableRow key={kw._id}>
+                        <TableCell className="font-medium">{kw.keyword}</TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={kw.priorityScore >= 90 ? "default" : kw.priorityScore >= 50 ? "secondary" : "outline"}
+                            className={cn(
+                              kw.priorityScore >= 90 ? "bg-emerald-500 hover:bg-emerald-600" :
+                                kw.priorityScore >= 50 ? "bg-blue-500/20 text-blue-500 hover:bg-blue-500/30" : ""
+                            )}
+                          >
+                            {kw.priorityScore}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Link href={`/cluster/${encodeURIComponent(kw.cluster)}`}>
+                            <span className="text-sm hover:text-primary hover:underline cursor-pointer flex items-center gap-1">
+                              {kw.cluster}
+                              <ExternalLink className="h-3 w-3 opacity-50" />
+                            </span>
+                          </Link>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-xs">
+                            {kw.journeyPhase}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">{kw.volume.toLocaleString()}</TableCell>
+                        <TableCell>
+                          {kw.hasContent ? (
+                            <Badge variant="secondary" className="bg-emerald-500/20 text-emerald-500">
+                              {kw.contentCount} Stück
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => handleEdit(kw)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:text-destructive"
+                              onClick={() => handleDelete(kw._id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-3">
+              {filteredKeywords.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  {keywordsWithContent === undefined ? "Lade Keywords..." : "Keine Keywords gefunden"}
+                </div>
+              ) : (
+                filteredKeywords.slice(0, 50).map((kw) => (
+                  <div
+                    key={kw._id}
+                    className="border rounded-lg p-3 space-y-2 bg-card"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="font-medium text-sm leading-tight flex-1">{kw.keyword}</div>
+                      <Badge
+                        variant={kw.priorityScore >= 90 ? "default" : kw.priorityScore >= 50 ? "secondary" : "outline"}
+                        className={cn(
+                          "shrink-0",
+                          kw.priorityScore >= 90 ? "bg-emerald-500 hover:bg-emerald-600" :
+                            kw.priorityScore >= 50 ? "bg-blue-500/20 text-blue-500 hover:bg-blue-500/30" : ""
+                        )}
+                      >
+                        {kw.priorityScore}
+                      </Badge>
+                    </div>
+                    {/* Priority bar */}
+                    <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                      <div
+                        className={cn(
+                          "h-full rounded-full",
+                          kw.priorityScore >= 90 ? "bg-emerald-500" :
+                            kw.priorityScore >= 50 ? "bg-blue-500" : "bg-muted-foreground"
+                        )}
+                        style={{ width: `${kw.priorityScore}%` }}
+                      />
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                      <Link href={`/cluster/${encodeURIComponent(kw.cluster)}`}>
+                        <span className="text-muted-foreground hover:text-primary">{kw.cluster}</span>
+                      </Link>
+                      <span className="text-muted-foreground/50">·</span>
+                      <Badge variant="outline" className="text-[10px] h-5 px-1.5">
+                        {kw.journeyPhase}
+                      </Badge>
+                      <span className="text-muted-foreground/50">·</span>
+                      <span className="text-muted-foreground">{kw.volume.toLocaleString()} Vol.</span>
+                    </div>
+                    <div className="flex items-center justify-between pt-1">
+                      <div>
+                        {kw.hasContent ? (
+                          <Badge variant="secondary" className="bg-emerald-500/20 text-emerald-500 text-xs">
+                            {kw.contentCount} Content
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">Kein Content</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => handleEdit(kw)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                          onClick={() => handleDelete(kw._id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
             {filteredKeywords.length > 50 && (
               <div className="text-center py-4 text-sm text-muted-foreground">
                 Zeige 50 von {filteredKeywords.length} Keywords. Verwende die Filter um die Liste einzugrenzen.

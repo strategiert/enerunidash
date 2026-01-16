@@ -67,14 +67,14 @@ export default function Dashboard() {
     <DashboardLayout>
       <div className="space-y-8">
         {/* Header Section */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">Marketing Übersicht</h2>
-            <p className="text-muted-foreground mt-1">Performance-Daten und KPIs für enerunity {selectedYear}</p>
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Marketing Übersicht</h2>
+            <p className="text-muted-foreground mt-1 text-sm sm:text-base">Performance-Daten für enerunity {selectedYear}</p>
           </div>
           <div className="flex items-center gap-4">
             <Select value={String(selectedYear)} onValueChange={(v) => setSelectedYear(Number(v))}>
-              <SelectTrigger className="w-[120px]">
+              <SelectTrigger className="w-[100px] sm:w-[120px]">
                 <SelectValue placeholder="Jahr" />
               </SelectTrigger>
               <SelectContent>
@@ -87,78 +87,78 @@ export default function Dashboard() {
         </div>
 
         {/* KPI Cards */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Gesamtumsatz (YTD)</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
+        <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
+          <Card className="p-3 sm:p-4">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 p-0">
+              <CardTitle className="text-xs sm:text-sm font-medium">Umsatz (YTD)</CardTitle>
+              <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatRevenue(stats.totalRevenue)}</div>
-              <p className="text-xs text-muted-foreground flex items-center mt-1">
+            <CardContent className="p-0 pt-1">
+              <div className="text-lg sm:text-2xl font-bold">{formatRevenue(stats.totalRevenue)}</div>
+              <p className="text-[10px] sm:text-xs text-muted-foreground flex items-center mt-1">
                 <span className="text-emerald-500 flex items-center mr-1">
-                  <ArrowUpRight className="h-3 w-3 mr-0.5" /> +20.1%
+                  <ArrowUpRight className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5" /> +20.1%
                 </span>
-                vs. Vorjahr
+                <span className="hidden sm:inline">vs. Vorjahr</span>
               </p>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Conversions</CardTitle>
-              <MousePointerClick className="h-4 w-4 text-muted-foreground" />
+          <Card className="p-3 sm:p-4">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 p-0">
+              <CardTitle className="text-xs sm:text-sm font-medium">Conversions</CardTitle>
+              <MousePointerClick className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalConversions.toLocaleString('de-DE')}</div>
-              <p className="text-xs text-muted-foreground flex items-center mt-1">
+            <CardContent className="p-0 pt-1">
+              <div className="text-lg sm:text-2xl font-bold">{stats.totalConversions.toLocaleString('de-DE')}</div>
+              <p className="text-[10px] sm:text-xs text-muted-foreground flex items-center mt-1">
                 <span className="text-emerald-500 flex items-center mr-1">
-                  <ArrowUpRight className="h-3 w-3 mr-0.5" /> +15.2%
+                  <ArrowUpRight className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5" /> +15.2%
                 </span>
-                vs. Vormonat
+                <span className="hidden sm:inline">vs. Vormonat</span>
               </p>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">USV-Anteil</CardTitle>
-              <Battery className="h-4 w-4 text-muted-foreground" />
+          <Card className="p-3 sm:p-4">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 p-0">
+              <CardTitle className="text-xs sm:text-sm font-medium">USV-Anteil</CardTitle>
+              <Battery className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.avgUsvShare}%</div>
-              <p className="text-xs text-muted-foreground flex items-center mt-1">
+            <CardContent className="p-0 pt-1">
+              <div className="text-lg sm:text-2xl font-bold">{stats.avgUsvShare}%</div>
+              <p className="text-[10px] sm:text-xs text-muted-foreground flex items-center mt-1">
                 <span className="text-emerald-500 flex items-center mr-1">
-                  <ArrowUpRight className="h-3 w-3 mr-0.5" /> +4.5%
+                  <ArrowUpRight className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5" /> +4.5%
                 </span>
-                Ziel: 30%
+                <span className="hidden sm:inline">Ziel: 30%</span>
               </p>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Content Pieces</CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
+          <Card className="p-3 sm:p-4">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 p-0">
+              <CardTitle className="text-xs sm:text-sm font-medium">Content</CardTitle>
+              <FileText className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{contentStats?.total || 0}</div>
-              <p className="text-xs text-muted-foreground flex items-center mt-1">
+            <CardContent className="p-0 pt-1">
+              <div className="text-lg sm:text-2xl font-bold">{contentStats?.total || 0}</div>
+              <p className="text-[10px] sm:text-xs text-muted-foreground flex items-center mt-1">
                 <span className="text-emerald-500 flex items-center mr-1">
-                  {contentStats?.published || 0} veröffentlicht
+                  {contentStats?.published || 0} pub.
                 </span>
-                / {contentStats?.inProgress || 0} in Arbeit
+                <span className="hidden sm:inline">/ {contentStats?.inProgress || 0} in Arbeit</span>
               </p>
             </CardContent>
           </Card>
         </div>
 
         {/* Main Charts */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-          <Card className="col-span-4">
-            <CardHeader>
-              <CardTitle>Umsatzentwicklung & Prognose</CardTitle>
-              <CardDescription>Vergleich Ist-Umsatz vs. Zielvorgabe {selectedYear}</CardDescription>
+        <div className="grid gap-4 grid-cols-1 lg:grid-cols-7">
+          <Card className="lg:col-span-4">
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="text-base sm:text-lg">Umsatzentwicklung</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">Ist vs. Ziel {selectedYear}</CardDescription>
             </CardHeader>
-            <CardContent className="pl-2">
-              <div className="h-[350px] w-full">
+            <CardContent className="pl-2 p-4 sm:p-6 pt-0">
+              <div className="h-[250px] sm:h-[350px] w-full">
                 {revenueData.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={revenueData}>
@@ -217,13 +217,13 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card className="col-span-3">
-            <CardHeader>
-              <CardTitle>Umsatz nach Kanal</CardTitle>
-              <CardDescription>Basierend auf Attribution Model</CardDescription>
+          <Card className="lg:col-span-3">
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="text-base sm:text-lg">Umsatz nach Kanal</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">Attribution Model</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="h-[350px] w-full">
+            <CardContent className="p-4 sm:p-6 pt-0">
+              <div className="h-[250px] sm:h-[350px] w-full">
                 {channelData.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
@@ -259,23 +259,23 @@ export default function Dashboard() {
         </div>
 
         {/* Content & Keywords */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <Card className="col-span-1">
-            <CardHeader>
-              <CardTitle>Top Keywords (nach Priorität)</CardTitle>
-              <CardDescription>Basierend auf Volumen und Schwierigkeit</CardDescription>
+        <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
+          <Card className="lg:col-span-1">
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="text-base sm:text-lg">Top Keywords</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">Nach Priorität</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
+            <CardContent className="p-4 sm:p-6 pt-0">
+              <div className="space-y-3 sm:space-y-4">
                 {topKeywords ? topKeywords.map((item) => (
-                  <div key={item._id} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-2 rounded-full bg-primary" />
-                      <span className="font-medium text-sm truncate max-w-[140px]">{item.keyword}</span>
+                  <div key={item._id} className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <div className="h-2 w-2 rounded-full bg-primary shrink-0" />
+                      <span className="font-medium text-xs sm:text-sm truncate">{item.keyword}</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">{item.volume.toLocaleString('de-DE')}</span>
-                      <span className="font-bold text-primary">{item.priorityScore}</span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-[10px] sm:text-xs text-muted-foreground hidden sm:inline">{item.volume.toLocaleString('de-DE')}</span>
+                      <span className="font-bold text-primary text-sm">{item.priorityScore}</span>
                     </div>
                   </div>
                 )) : (
@@ -285,13 +285,14 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card className="col-span-2">
-            <CardHeader>
-              <CardTitle>Content Pipeline {selectedYear}</CardTitle>
-              <CardDescription>Nächste 30 Tage - Content nach Status</CardDescription>
+          <Card className="lg:col-span-2">
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="text-base sm:text-lg">Content Pipeline {selectedYear}</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">Nächste 30 Tage</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
+            <CardContent className="p-4 sm:p-6 pt-0">
+              {/* Desktop Table View */}
+              <div className="hidden md:block space-y-4">
                 <div className="grid grid-cols-5 gap-4 text-sm font-medium text-muted-foreground mb-2">
                   <div>Thema</div>
                   <div>Format</div>
@@ -333,18 +334,51 @@ export default function Dashboard() {
                   </div>
                 )}
               </div>
+
+              {/* Mobile Card View */}
+              <div className="md:hidden space-y-3">
+                {upcomingContent && upcomingContent.length > 0 ? (
+                  upcomingContent.slice(0, 5).map((item) => (
+                    <div key={item._id} className="border rounded-lg p-3 space-y-2">
+                      <div className="font-medium text-sm">{item.title}</div>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="px-2 py-0.5 rounded-full bg-secondary text-[10px]">{item.contentType}</span>
+                        <span className="text-[10px] text-muted-foreground">{item.channel}</span>
+                        <span className={cn(
+                          "px-2 py-0.5 rounded-full text-[10px] flex items-center gap-1",
+                          item.status === "Published" ? "bg-emerald-500/10 text-emerald-500" :
+                          item.status === "Review" ? "bg-amber-500/10 text-amber-500" :
+                          item.status === "In Progress" || item.status === "Draft" ? "bg-blue-500/10 text-blue-500" :
+                          item.status === "Scheduled" ? "bg-purple-500/10 text-purple-500" :
+                          "bg-muted text-muted-foreground"
+                        )}>
+                          <span className="h-1 w-1 rounded-full bg-current" />
+                          {item.status}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground ml-auto">
+                          {new Date(item.publishDate).toLocaleDateString('de-DE', { day: '2-digit', month: 'short' })}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-sm text-muted-foreground text-center py-4">
+                    {upcomingContent === undefined ? "Lade Content..." : "Keine anstehenden Content-Pieces"}
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
         </div>
 
         {/* Content Distribution Chart */}
         <Card>
-          <CardHeader>
-            <CardTitle>Content-Verteilung {selectedYear}</CardTitle>
-            <CardDescription>Content Pieces nach Kanal pro Monat</CardDescription>
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="text-base sm:text-lg">Content-Verteilung {selectedYear}</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">Nach Kanal pro Monat</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="h-[300px] w-full">
+          <CardContent className="p-4 sm:p-6 pt-0">
+            <div className="h-[200px] sm:h-[300px] w-full">
               {contentByMonthData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={contentByMonthData}>
