@@ -13,8 +13,9 @@ import { cn } from "@/lib/utils";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "convex/_generated/api";
 import { Id } from "convex/_generated/dataModel";
-import { BookOpen, CheckCircle2, Clock, Edit, FileText, Plus, Trash2, Video } from "lucide-react";
+import { BookOpen, CheckCircle2, Clock, Edit, ExternalLink, FileText, Plus, Trash2, Video } from "lucide-react";
 import { useState, useMemo } from "react";
+import { Link } from "wouter";
 
 export default function ContentPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -25,6 +26,7 @@ export default function ContentPage() {
   const pillarsWithContent = useQuery(api.contentPieces.getByPillar, {});
   const contentStats = useQuery(api.contentPieces.getStats, { year: selectedYear });
   const yearOverview = useQuery(api.contentPieces.getYearOverview, { year: selectedYear });
+  const clusters = useQuery(api.keywords.getClusters, {});
 
   // Convex Mutations - Einheitliches Content-Modell
   const createContent = useMutation(api.contentPieces.create);
@@ -337,7 +339,12 @@ export default function ContentPage() {
             <Card key={pillar._id} className="flex flex-col">
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">{pillar.title}</CardTitle>
+                  <Link href={`/pillar/${pillar._id}`}>
+                    <CardTitle className="text-lg hover:text-primary hover:underline cursor-pointer flex items-center gap-1">
+                      {pillar.title}
+                      <ExternalLink className="h-3 w-3 opacity-50" />
+                    </CardTitle>
+                  </Link>
                   <Badge variant={pillar.priority === "HOCH" ? "default" : "secondary"} className="text-[10px]">
                     {pillar.priority}
                   </Badge>
@@ -397,6 +404,31 @@ export default function ContentPage() {
               </CardContent>
             </Card>
           ))}
+        </div>
+
+        {/* Keyword Cluster */}
+        <div className="space-y-4">
+          <h3 className="text-xl font-semibold">Keyword Cluster</h3>
+          <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-5">
+            {clusters?.map((cluster) => (
+              <Link key={cluster.name} href={`/cluster/${encodeURIComponent(cluster.name)}`}>
+                <Card className="cursor-pointer hover:bg-muted/50 transition-colors">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium truncate">{cluster.name}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-2xl font-bold">{cluster.count}</span>
+                      <span className="text-xs text-muted-foreground">Keywords</span>
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {cluster.contentCount} Content | {cluster.totalVolume.toLocaleString()} Vol.
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
         </div>
 
         {/* Jahresübersicht */}

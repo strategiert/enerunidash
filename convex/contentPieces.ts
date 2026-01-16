@@ -242,6 +242,58 @@ export const getYearOverview = query({
   },
 });
 
+// Pillar-Detail: Alle Infos zu einem Content Pillar
+export const getPillarDetail = query({
+  args: { pillarId: v.id("contentPillars") },
+  handler: async (ctx, args) => {
+    const pillar = await ctx.db.get(args.pillarId);
+    if (!pillar) return null;
+
+    const pieces = await ctx.db.query("contentPieces").collect();
+    const pillarPieces = pieces.filter(p => p.pillarId === args.pillarId);
+
+    // Statistiken
+    const published = pillarPieces.filter(p => p.status === "Published").length;
+    const inProgress = pillarPieces.filter(p => ["Draft", "In Progress", "Review"].includes(p.status)).length;
+    const planned = pillarPieces.filter(p => ["Planned", "Scheduled"].includes(p.status)).length;
+
+    // Nach Status gruppieren
+    const byStatus = pillarPieces.reduce((acc, p) => {
+      acc[p.status] = (acc[p.status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    // Nach Channel gruppieren
+    const byChannel = pillarPieces.reduce((acc, p) => {
+      acc[p.channel] = (acc[p.channel] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    // Nach Content Type gruppieren
+    const byContentType = pillarPieces.reduce((acc, p) => {
+      acc[p.contentType] = (acc[p.contentType] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    return {
+      ...pillar,
+      pieces: pillarPieces.sort((a, b) =>
+        new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime()
+      ),
+      stats: {
+        total: pillarPieces.length,
+        published,
+        inProgress,
+        planned,
+        progress: pillar.targetCount > 0 ? Math.round((published / pillar.targetCount) * 100) : 0,
+        byStatus,
+        byChannel,
+        byContentType,
+      },
+    };
+  },
+});
+
 // ============ MUTATIONS ============
 
 // Neues Content Piece erstellen

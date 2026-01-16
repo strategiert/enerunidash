@@ -8,6 +8,7 @@ import CalendarPage from "./pages/Calendar";
 import CampaignsPage from "./pages/Campaigns";
 import ClusterDetailPage from "./pages/ClusterDetail";
 import ContentPage from "./pages/Content";
+import PillarDetailPage from "./pages/PillarDetail";
 import Dashboard from "./pages/Dashboard";
 import KeywordsPage from "./pages/Keywords";
 import SettingsPage from "./pages/Settings";
@@ -21,6 +22,7 @@ function Router() {
       <Route path={"/keywords"} component={KeywordsPage} />
       <Route path={"/cluster/:cluster"} component={ClusterDetailPage} />
       <Route path={"/content"} component={ContentPage} />
+      <Route path={"/pillar/:pillarId"} component={PillarDetailPage} />
       <Route path={"/campaigns"} component={CampaignsPage} />
       <Route path={"/settings"} component={SettingsPage} />
       <Route path={"/404"} component={NotFound} />

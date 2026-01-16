@@ -191,10 +191,19 @@ export const getClusterDetail = query({
     const contentPieces = await ctx.db.query("contentPieces").collect();
     const keywordIds = new Set(keywords.map(k => k._id));
 
-    // Content Pieces die ein Keyword aus diesem Cluster als primaryKeyword haben
-    const clusterContent = contentPieces.filter(cp =>
-      cp.primaryKeyword && keywordIds.has(cp.primaryKeyword)
-    );
+    // Content Pieces die ein Keyword aus diesem Cluster targeten
+    // (entweder als primaryKeyword ODER in targetKeywords)
+    const clusterContent = contentPieces.filter(cp => {
+      // Check primaryKeyword
+      if (cp.primaryKeyword && keywordIds.has(cp.primaryKeyword)) {
+        return true;
+      }
+      // Check targetKeywords array
+      if (cp.targetKeywords && cp.targetKeywords.some(kwId => keywordIds.has(kwId))) {
+        return true;
+      }
+      return false;
+    });
 
     // Statistiken
     const totalVolume = keywords.reduce((sum, k) => sum + k.volume, 0);
@@ -203,9 +212,18 @@ export const getClusterDetail = query({
       : 0;
     const publishedContent = clusterContent.filter(c => c.status === "Published").length;
 
+    // Keywords mit Content-Count anreichern
+    const keywordsWithCount = keywords.map(kw => {
+      const contentCount = contentPieces.filter(cp =>
+        cp.primaryKeyword === kw._id ||
+        (cp.targetKeywords && cp.targetKeywords.includes(kw._id))
+      ).length;
+      return { ...kw, contentCount };
+    });
+
     return {
       cluster: args.cluster,
-      keywords: keywords.sort((a, b) => b.priorityScore - a.priorityScore),
+      keywords: keywordsWithCount.sort((a, b) => b.priorityScore - a.priorityScore),
       contentPieces: clusterContent.sort((a, b) =>
         new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime()
       ),
